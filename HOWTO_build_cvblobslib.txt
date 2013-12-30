@@ -1,3 +1,22 @@
+CMake
+=====================
+Steps to build using cmake:
+1 - mkdir build
+2 - cd build
+3 - cmake ..
+# to override the OpenCV location specify the following command line options
+# OpenCV_LIB_DIR - Directory where OpenCV libraries are located
+# OpenCV_INCLUDE_DIRS - Directory where OpenCV headers are located
+# Example: cmake -DOpenCV_LIB_DIR=/usr/local/lib -DOpenCV_INCLUDE_DIRS=/usr/local/include ..
+# These paths can be edited via ccmake also: ccmake ..
+4 - make
+5 - sudo make install
+
+
+Visual Studio
+=====================
+TODO: Update this
+
 Steps to use the library (using MSVC++ sp 5):
 1 - open the project of the library and build it
 2 - in the project where the library should be used, add:
