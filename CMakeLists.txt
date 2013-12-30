@@ -8,7 +8,8 @@ set(CVBLOBS_LIBRARY_NAME "blob")
 # verbose makefile
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Verbose" FORCE)
 # debug build (-g) includes symbols
-set(CMAKE_BUILD_TYPE Debug)
+set (CMAKE_BUILD_TYPE CMAKE_BUILD_TYPE CACHE INTERNAL "CMake_Build_Type")
+message( "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}" )
 # warn all and -fPIC for shared build
 set(CMAKE_CXX_FLAGS "-Wall -fPIC -fno-strict-aliasing -ansi -pipe -fstrength-reduce -finline-functions -Wall -Wno-unused-result")
 # place the library in the lib/ directory by default

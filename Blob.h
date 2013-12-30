@@ -31,15 +31,9 @@ MODIFICATIONS (Modification, Author, Date):
 #endif
 
 
-//! Type of labelled images
-typedef unsigned int t_labelType;
-
-
 //! Blob class
 class CBlob
 {
-	typedef std::list<CBlobContour> t_contourList;
-
 	struct mapComparator
 	{
 	  bool operator()(const std::string &s1, const std::string &s2) const

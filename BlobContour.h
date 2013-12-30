@@ -5,18 +5,10 @@
 #include "list"
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
-
-//! Type of chain codes
-typedef unsigned char t_chainCode;
-//! Type of list of chain codes
-typedef CvSeq* t_chainCodeList;
-//! Type of list of points
-typedef CvSeq* t_PointList;
-
+#include "BlobFwd.h"
 
 //! Max order of calculated moments
 #define MAX_MOMENTS_ORDER		3
-
 
 //! Blob contour class (in crack code)
 class CBlobContour
