@@ -6,7 +6,7 @@
 #endif
 
 #include <limits.h>
-#include "BlobOperators.h"
+#include <cvblobs/BlobOperators.h>
 
 /***************************************************************************
   Implementació de les classes per al càlcul de característiques sobre el blob

@@ -12,7 +12,7 @@ MODIFICACIONS (Modificació, Autor, Data):
   #pragma warning(disable: 4786)
 #endif // _MSC_VER > 1000
 
-#include "BlobResult.h"
+#include <cvblobs/BlobResult.h>
 #include <limits.h>
 #include <stdio.h>
 #include <functional>

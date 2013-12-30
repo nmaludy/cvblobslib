@@ -41,15 +41,12 @@ set(CVBLOBS_LIBRARY_NAME "cvblobs")
 # CMAKE_CURRENT_LIST_DIR is the directory that contains the CMakeLists.txt file
 # which in our case is the root directory of the project so add include/ to
 # the include directories
-include_directories(${CMAKE_CURRENT_LIST_DIR})
-
-#### TODO ####
-#### Move source and header files to src/ and include/ directories
+include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
 
 # search the src/ directory for all files ending in .cpp
-file(GLOB SOURCES ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
+file(GLOB SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/cvblobs/*.cpp)
 # search the include/ directory for all files ending in .h
-file(GLOB HEADERS ${CMAKE_CURRENT_LIST_DIR}/*.h)
+file(GLOB HEADERS ${CMAKE_CURRENT_LIST_DIR}/src/cvblobs/*.h)
 
 # define the GeographicJni library and specify whether it is shared or not.
 add_library(${CVBLOBS_LIBRARY_NAME} SHARED ${SOURCES} ${HEADERS})
@@ -61,8 +58,9 @@ set_target_properties(${CVBLOBS_LIBRARY_NAME} PROPERTIES
   SOVERSION ${CVBLOBS_MAJOR_VERSION})
 
 # create a sylink called libblob.so to links to libcvblobs.so
+set (LIBBLOB_LINK_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}blob${CMAKE_SHARED_LIBRARY_SUFFIX})
 add_custom_command(TARGET ${CVBLOBS_LIBRARY_NAME} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SHARED_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_SHARED_LIBRARY_PREFIX}blob${CMAKE_SHARED_LIBRARY_SUFFIX}
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SHARED_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX} ${LIBBLOB_LINK_NAME}
 )
  
 ##################################
@@ -148,7 +146,7 @@ endforeach()
 # usage: make install
 
 # install headers
-install (FILES ${HEADERS} DESTINATION include/${PROJECT_NAME})
+install (FILES ${HEADERS} DESTINATION include/${CVBLOBS_LIBRARY_NAME})
 
 # install library file
 install(TARGETS ${CVBLOBS_LIBRARY_NAME}
@@ -156,6 +154,9 @@ install(TARGETS ${CVBLOBS_LIBRARY_NAME}
   LIBRARY DESTINATION lib${LIB_SUFFIX}
   ARCHIVE DESTINATION lib${LIB_SUFFIX}
 )
+
+# install libblob.so link
+install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${LIBBLOB_LINK_NAME} DESTINATION lib${LIB_SUFFIX})
 
 ####################
 # Uninstall target #

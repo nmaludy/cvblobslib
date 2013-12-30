@@ -20,24 +20,24 @@ MODIFICATIONS (Modification, Author, Date):
 #endif // _MSC_VER > 1000
 
 
-#include "BlobLibraryConfiguration.h"
+#include <cvblobs/BlobLibraryConfiguration.h>
 #include <math.h>
-#include "cxcore.h"
+#include <opencv/cxcore.h>
 
 #ifdef MATRIXCV_ACTIU
 	#include "matrixCV.h"
 #else
 	// llibreria STL
-	#include "vector"
+	#include <vector>
 	//! Vector de doubles
 	typedef std::vector<double> double_stl_vector;
 #endif
 
 #include <vector>		// vectors de la STL
 #include <functional>
-#include "Blob.h"
-#include "BlobOperators.h"
-#include "ComponentLabeling.h"
+#include <cvblobs/Blob.h>
+#include <cvblobs/BlobOperators.h>
+#include <cvblobs/ComponentLabeling.h>
 /**************************************************************************
 	Filtres / Filters
 **************************************************************************/

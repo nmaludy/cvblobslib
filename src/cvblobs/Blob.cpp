@@ -13,8 +13,8 @@ MODIFICATIONS (Modification, Author, Date):
 
 **************************************************************************/
 
-#include "Blob.h"
-#include "BlobOperators.h"
+#include <cvblobs/Blob.h>
+#include <cvblobs/BlobOperators.h>
 
 using namespace std;
 

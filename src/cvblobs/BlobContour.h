@@ -2,10 +2,10 @@
 #define BLOBCONTOUR_H_INCLUDED
 
 
-#include "list"
+#include <list>
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
-#include "BlobFwd.h"
+#include <cvblobs/BlobFwd.h>
 
 //! Max order of calculated moments
 #define MAX_MOMENTS_ORDER		3

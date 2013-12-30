@@ -20,10 +20,10 @@ MODIFICATIONS (Modification, Author, Date):
 	#pragma warning( disable : 4786 )
 #endif
 
-#include "cxcore.h"
-#include "BlobLibraryConfiguration.h"
-#include "BlobContour.h"
-#include "map"
+#include <opencv/cxcore.h>
+#include <cvblobs/BlobLibraryConfiguration.h>
+#include <cvblobs/BlobContour.h>
+#include <map>
 
 #ifdef BLOB_OBJECT_FACTORY
 	//! Object factory pattern implementation

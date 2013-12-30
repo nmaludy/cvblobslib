@@ -4,7 +4,7 @@
   #pragma warning(disable: 4786)
 #endif // _MSC_VER > 1000
 
-#include "ComponentLabeling.h"
+#include <cvblobs/ComponentLabeling.h>
 
 //! Conversion from freeman code to coordinate increments (counterclockwise)
 static const CvPoint freemanCodeIncrement[8] =

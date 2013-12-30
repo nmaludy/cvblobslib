@@ -2,9 +2,9 @@
 #define _COMPONENT_LABELING_H_INCLUDED
 
 #include <vector>
-#include "BlobContour.h"
-#include "Blob.h"
-#include "counted_ptr.h"
+#include <cvblobs/BlobContour.h>
+#include <cvblobs/Blob.h>
+#include <cvblobs/counted_ptr.h>
 
 //! Shared pointer to blob
 typedef counted_ptr<CBlob> BlobPtr;
