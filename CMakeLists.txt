@@ -1,19 +1,38 @@
+###################
+# CMake variables #
+###################
 cmake_minimum_required(VERSION 2.6)
 
-project(CvBlobsLib)
-
-# name of the library file
-set(CVBLOBS_LIBRARY_NAME "blob")
+# If the user specifies -DCMAKE_BUILD_TYPE on the command line, take their 
+# definition and dump it in the cache along with proper documentation, 
+# otherwise set CMAKE_BUILD_TYPE to Debug prior to calling project()
+if (DEFINED CMAKE_BUILD_TYPE)
+   set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Choose the type of
+build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug
+Release RelWithDebInfo MinSizeRel.")
+else ()
+   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build,
+options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release
+RelWithDebInfo MinSizeRel.")
+endif (DEFINED CMAKE_BUILD_TYPE)
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}" )
 
 # verbose makefile
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Verbose" FORCE)
-# debug build (-g) includes symbols
-set (CMAKE_BUILD_TYPE CMAKE_BUILD_TYPE CACHE INTERNAL "CMake_Build_Type")
-message( "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}" )
 # warn all and -fPIC for shared build
-set(CMAKE_CXX_FLAGS "-Wall -fPIC -fno-strict-aliasing -ansi -pipe -fstrength-reduce -finline-functions -Wall -Wno-unused-result")
-# place the library in the lib/ directory by default
-set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_LIST_DIR}/lib)
+set(CMAKE_CXX_FLAGS "-Wall -fPIC -fno-strict-aliasing -ansi -pedantic -Werror")
+
+###########
+# Project #
+###########
+project(CvBlobsLib)
+set(CVBLOBS_MAJOR_VERSION 0)
+set(CVBLOBS_MINOR_VERSION 1)
+set(CVBLOBS_PATCH_VERSION 0)
+set(CVBLOBS_VERSION ${CVBLOBS_MAJOR_VERSION}.${CVBLOBS_MINOR_VERSION}.${CVBLOBS_PATCH_VERSION})
+
+# name of the library file
+set(CVBLOBS_LIBRARY_NAME "cvblobs")
 
 #######################
 # Sources and Headers #
@@ -35,6 +54,17 @@ file(GLOB HEADERS ${CMAKE_CURRENT_LIST_DIR}/*.h)
 # define the GeographicJni library and specify whether it is shared or not.
 add_library(${CVBLOBS_LIBRARY_NAME} SHARED ${SOURCES} ${HEADERS})
 
+# set the library version so that the library will be named libX.so.MAJOR.MINOR
+# this will also create nice symlinks
+set_target_properties(${CVBLOBS_LIBRARY_NAME} PROPERTIES
+  VERSION   ${CVBLOBS_VERSION}
+  SOVERSION ${CVBLOBS_MAJOR_VERSION})
+
+# create a sylink called libblob.so to links to libcvblobs.so
+add_custom_command(TARGET ${CVBLOBS_LIBRARY_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SHARED_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_SHARED_LIBRARY_PREFIX}blob${CMAKE_SHARED_LIBRARY_SUFFIX}
+)
+ 
 ##################################
 # Find Packages and Dependencies #
 ##################################
@@ -56,23 +86,23 @@ endif()
 if (DEFINED OpenCV_LIB_DIR AND
     DEFINED OpenCV_INCLUDE_DIRS)
   # user specified variables on command line (or they are in the cache already)
-  message("-- OpenCV - defined on command line or in ccmake cache")
-  message("-- OpenCV_LIB_DIR - ${OpenCV_LIB_DIR}")
-  message("-- OpenCV_INCLUDE_DIRS - ${OpenCV_INCLUDE_DIRS}")
+  message(STATUS "OpenCV - defined on command line or in ccmake cache")
+  message(STATUS "OpenCV_LIB_DIR - ${OpenCV_LIB_DIR}")
+  message(STATUS "OpenCV_INCLUDE_DIRS - ${OpenCV_INCLUDE_DIRS}")
   
   include_directories(${OpenCV_INCLUDE_DIRS})
   link_directories(${OpenCV_LIB_DIR})
   target_link_libraries(${CVBLOBS_LIBRARY_NAME} opencv_core opencv_imgproc)
 else ()
-  message("-- OpenCV - finding")
+  message(STATUS "OpenCV - finding")
   find_package(OpenCV REQUIRED)
   if (DEFINED OpenCV_LIBS)
     list(REMOVE_DUPLICATES OpenCV_LIBS)
-    message("-- OpenCV - found")
-    message("-- OpenCV_VERSION - ${OpenCV_VERSION}")
-    message("-- OpenCV_LIB_DIR - ${OpenCV_LIB_DIR}")
-    message("-- OpenCV_LIBS - ${OpenCV_LIBS}")
-    message("-- OpenCV_INCLUDE_DIRS - ${OpenCV_INCLUDE_DIRS}")
+    message(STATUS "OpenCV - found")
+    message(STATUS "OpenCV_VERSION - ${OpenCV_VERSION}")
+    message(STATUS "OpenCV_LIB_DIR - ${OpenCV_LIB_DIR}")
+    message(STATUS "OpenCV_LIBS - ${OpenCV_LIBS}")
+    message(STATUS "OpenCV_INCLUDE_DIRS - ${OpenCV_INCLUDE_DIRS}")
     
     include_directories(${OpenCV_INCLUDE_DIRS})
     link_directories(${OpenCV_LIB_DIR})
@@ -92,24 +122,24 @@ set(OpenCV_INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS} CACHE PATH "Directory where OpenC
 
 # debug print to make sure we globbed the correct source/headers
 foreach(header ${HEADERS})
-  message("-- ${PROJECT_NAME} header: ${header}")
+  message(STATUS "${PROJECT_NAME} header: ${header}")
 endforeach()
 
 foreach(source ${SOURCES})
-  message("-- ${PROJECT_NAME} source: ${source}")
+  message(STATUS "${PROJECT_NAME} source: ${source}")
 endforeach()
 
 # print out all of our include directories
 get_property(dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
 foreach(dir ${dirs})
-  message("-- ${PROJECT_NAME} include dir: ${dir}")
+  message(STATUS "${PROJECT_NAME} include dir: ${dir}")
 endforeach()
 
 # print out of the libraries that will be linked to 
 # these were added with target_link_libraries() above
-list(REMOVE_DUPLICATES blob_LIB_DEPENDS)
+list(REMOVE_DUPLICATES cvblobs_LIB_DEPENDS)
 foreach(lib ${blob_LIB_DEPENDS})
-  message("-- ${PROJECT_NAME} link library: ${lib}")
+  message(STATUS "${PROJECT_NAME} link library: ${lib}")
 endforeach()
 
 ##################
