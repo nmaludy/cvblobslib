@@ -16,8 +16,6 @@ MODIFICATIONS (Modification, Author, Date):
 #include <cvblobs/Blob.h>
 #include <cvblobs/BlobOperators.h>
 
-using namespace std;
-
 CBlob::CBlob()
 {
 	m_storage = NULL;

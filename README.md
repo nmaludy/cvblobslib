@@ -9,11 +9,11 @@ Steps to build using cmake:
 - mkdir build
 - cd build
 - cmake ..
-  - to override the OpenCV location specify the following command line options
+  - To override the OpenCV location specify the following command line options
   - OpenCV_LIB_DIR - Directory where OpenCV libraries are located
   - OpenCV_INCLUDE_DIRS - Directory where OpenCV headers are located
   - Example: cmake -DOpenCV_LIB_DIR=/usr/local/lib -DOpenCV_INCLUDE_DIRS=/usr/local/include ..
-  - These paths can be edited via ccmake also: ccmake ..
+  - These paths can be edited via ccmake using: ccmake ..
 - make
 - sudo make install
 
@@ -36,7 +36,7 @@ Coding Standards
 - [ ] Pointers will be prefixed with a p: Example p_local_ptr, pBlobArg, mpPrivateBlob
 - [ ] Header guards will be formattted _CVBLOBSLIB_FILENAME_H_
 - [ ] Prefer forward declarations to #include in headers
-- [ ] Do not use the "using" keyword
-- [ ] All includes will use <> and not quotes
-- [ ] C++11 undecided, no for now
+- [x] Do not use the "using" keyword
+- [x] All includes will use <> and not quotes
+- [ ] C++11 ... no for now
 
