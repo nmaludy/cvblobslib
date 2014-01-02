@@ -1,5 +1,11 @@
-#ifndef _CVBLOBSLIB_BLOBFWD_H_
-#define _CVBLOBSLIB_BLOBFWD_H_
+/**
+ * @brief Header that formward declares all objects and typedefs in this
+ *        library
+ * @author N. Maludy
+ * @date 01/02/2014
+ */
+#ifndef _CVBLOBS_CVBLOBSFWD_H_
+#define _CVBLOBS_CVBLOBSFWD_H_
 
 #include <list>
 
@@ -21,4 +27,4 @@ typedef CvSeq* t_PointList;
 typedef unsigned int t_labelType;
 typedef std::list<CBlobContour> t_contourList;
 
-#endif // _CVBLOBSLIB_BLOBFWD_H_
+#endif // _CVBLOBS_CVBLOBSFWD_H_

@@ -1,11 +1,11 @@
-#ifndef BLOBCONTOUR_H_INCLUDED
-#define BLOBCONTOUR_H_INCLUDED
+#ifndef _CVBLOBS_BLOBCONTOUR_H_
+#define _CVBLOBS_BLOBCONTOUR_H_
 
 
 #include <list>
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
-#include <cvblobs/BlobFwd.h>
+#include <cvblobs/CvBlobsFwd.h>
 
 //! Max order of calculated moments
 #define MAX_MOMENTS_ORDER		3
@@ -84,6 +84,6 @@ private:
 	CvMemStorage *m_parentStorage;
 };
 
-#endif	//!BLOBCONTOUR_H_INCLUDED
+#endif // _CVBLOBS_BLOBCONTOUR_H_
 
 

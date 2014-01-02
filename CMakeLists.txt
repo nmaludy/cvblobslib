@@ -20,7 +20,7 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}" )
 # verbose makefile
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Verbose" FORCE)
 # warn all and -fPIC for shared build
-set(CMAKE_CXX_FLAGS "-Wall -fPIC -fno-strict-aliasing -ansi -pedantic -Werror")
+set(CMAKE_CXX_FLAGS "-Wall -fPIC -fno-strict-aliasing -ansi -Werror")
 
 ###########
 # Project #
@@ -44,9 +44,13 @@ set(CVBLOBS_LIBRARY_NAME "cvblobs")
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
 
 # search the src/ directory for all files ending in .cpp
-file(GLOB SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/cvblobs/*.cpp)
+file(GLOB SOURCES 
+     ${CMAKE_CURRENT_LIST_DIR}/src/cvblobs/*.cpp
+     ${CMAKE_CURRENT_LIST_DIR}/src/cvblobs2/*.cpp)
 # search the include/ directory for all files ending in .h
-file(GLOB HEADERS ${CMAKE_CURRENT_LIST_DIR}/src/cvblobs/*.h)
+file(GLOB HEADERS 
+     ${CMAKE_CURRENT_LIST_DIR}/src/cvblobs/*.h
+     ${CMAKE_CURRENT_LIST_DIR}/src/cvblobs2/*.h)
 
 # define the GeographicJni library and specify whether it is shared or not.
 add_library(${CVBLOBS_LIBRARY_NAME} SHARED ${SOURCES} ${HEADERS})

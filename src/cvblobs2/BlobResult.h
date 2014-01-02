@@ -12,17 +12,24 @@ MODIFICATIONS (Modification, Author, Date):
 **************************************************************************/
 
 
-#ifndef _CVBLOBS_BLOBRESULT_H_
-#define _CVBLOBS_BLOBRESULT_H_
+#ifndef _CVBLOBS2_BLOBRESULT_H_
+#define _CVBLOBS2_BLOBRESULT_H_
 
 #if _MSC_VER > 1000 
 #pragma once
 #endif // _MSC_VER > 1000
 
 
-#include <cvblobs/BlobLibraryConfiguration.h>
+#include <cvblobs2/BlobLibraryConfiguration.h>
 #include <math.h>
 #include <opencv/cxcore.h>
+
+#include <vector>		// vectors de la STL
+#include <cvblobs2/Blob.h>
+#include <cvblobs2/BlobOperators.h>
+#include <cvblobs2/ComponentLabeling.h>
+
+CVBLOBS_BEGIN_NAMESPACE;
 
 #ifdef MATRIXCV_ACTIU
 	#include "matrixCV.h"
@@ -33,11 +40,6 @@ MODIFICATIONS (Modification, Author, Date):
 	typedef std::vector<double> double_stl_vector;
 #endif
 
-#include <vector>		// vectors de la STL
-#include <functional>
-#include <cvblobs/Blob.h>
-#include <cvblobs/BlobOperators.h>
-#include <cvblobs/ComponentLabeling.h>
 /**************************************************************************
 	Filtres / Filters
 **************************************************************************/
@@ -74,28 +76,28 @@ MODIFICATIONS (Modification, Author, Date):
 	on them. Also, the class provides functions to filter the blobs using
 	some criteria.
 */
-class CBlobResult  
+class BlobResult  
 {
 public:
 
 	//! constructor estandard, crea un conjunt buit de blobs
 	//! Standard constructor, it creates an empty set of blobs
-	CBlobResult();
+	BlobResult();
 	//! constructor a partir d'una imatge
 	//! Image constructor, it creates an object with the blobs of the image
-	CBlobResult(IplImage *source, IplImage *mask, uchar backgroundColor);
+	BlobResult(IplImage *source, IplImage *mask, uchar backgroundColor);
 	//! constructor de còpia
 	//! Copy constructor
-	CBlobResult( const CBlobResult &source );
+	BlobResult( const BlobResult &source );
 	//! Destructor
-	virtual ~CBlobResult();
+	virtual ~BlobResult();
 
-	//! operador = per a fer assignacions entre CBlobResult
+	//! operador = per a fer assignacions entre BlobResult
 	//! Assigment operator
-	CBlobResult& operator=(const CBlobResult& source);
-	//! operador + per concatenar dos CBlobResult
+	BlobResult& operator=(const BlobResult& source);
+	//! operador + per concatenar dos BlobResult
 	//! Addition operator to concatenate two sets of blobs
-	CBlobResult operator+( const CBlobResult& source ) const;
+	BlobResult operator+( const BlobResult& source ) const;
 	
 	//! Afegeix un blob al conjunt
 	//! Adds a blob to the set of blobs
@@ -116,17 +118,17 @@ public:
 
 	//! Retorna aquells blobs que compleixen les condicions del filtre en el destination 
 	//! Filters the blobs of the class using some property
-	void Filter(CBlobResult &dst,
+	void Filter(BlobResult &dst,
 				int filterAction, funcio_calculBlob *evaluador, 
 				int condition, double lowLimit, double highLimit = 0 );
 			
 	//! Retorna l'enèssim blob segons un determinat criteri
 	//! Sorts the blobs of the class acording to some criteria and returns the n-th blob
-	void GetNthBlob( funcio_calculBlob *criteri, int nBlob, CBlob &dst ) const;
+	void GetNthBlob( funcio_calculBlob *criteri, int nBlob, Blob &dst ) const;
 	
 	//! Retorna el blob enèssim
 	//! Gets the n-th blob of the class ( without sorting )
-	CBlob GetBlob(int indexblob) const;
+	Blob GetBlob(int indexblob) const;
 	
 	BlobPtr GetBlobPtr(int indexblob);
 	
@@ -158,7 +160,7 @@ private:
 	void RaiseError(const int errorCode) const;
 
 	//! Does the Filter method job
-	void DoFilter(CBlobResult &dst,
+	void DoFilter(BlobResult &dst,
 				int filterAction, funcio_calculBlob *evaluador, 
 				int condition, bool inlineFilter, double lowLimit, double highLimit = 0);
 
@@ -169,4 +171,6 @@ protected:
 	Blob_vector		m_blobs;
 };
 
-#endif // _CVBLOBS_BLOBRESULT_H_
+CVBLOBS_END_NAMESPACE;
+
+#endif // _CVBLOBS2_BLOBRESULT_H_

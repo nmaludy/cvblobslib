@@ -39,4 +39,10 @@ Coding Standards
 - [x] Do not use the "using" keyword
 - [x] All includes will use <> and not quotes
 - [ ] C++11 ... no for now
-
+- [ ] Functions declared inline will be defined in the header file but not inside the class definition
+- [ ] Best effort will be made for lines to not exceed 80 characters in width
+- [ ] All braces will be on their own line
+- [ ] All loops and conditionals will have braces
+- [ ] All primitive variables will be initialized to 0 or 0.0 where declared and in all constructors if not initialized to another value.
+- [ ] All pointers will be initialized to NULL where declared if not initialized to another value
+- [ ] Only one variable will be declared per line. No compound declarations (double x, y, z;)

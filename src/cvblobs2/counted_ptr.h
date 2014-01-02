@@ -5,8 +5,8 @@
  * int and pointer for every counted object.
  */
 
-#ifndef _CVBLOBS_COUNTED_PTR_H_
-#define _CVBLOBS_COUNTED_PTR_H_
+#ifndef _CVBLOBS2_COUNTED_PTR_H_
+#define _CVBLOBS2_COUNTED_PTR_H_
 
 #define NO_MEMBER_TEMPLATES
 /* For ANSI-challenged compilers, you may want to #define
@@ -78,4 +78,4 @@ private:
     }
 };
 
-#endif // _CVBLOBS_COUNTED_PTR_H_
+#endif // _CVBLOBS2_COUNTED_PTR_H_

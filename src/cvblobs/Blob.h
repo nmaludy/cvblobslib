@@ -12,8 +12,8 @@ MODIFICATIONS (Modification, Author, Date):
 
 **************************************************************************/
 
-#ifndef CBLOB_INSPECTA_INCLUDED
-#define CBLOB_INSPECTA_INCLUDED
+#ifndef _CVBLOBS_BLOB_H_
+#define _CVBLOBS_BLOB_H_
 
 #ifdef _MSC_VER
 	//! Disable warnings referred to 255 character truncation for the std:map
@@ -177,7 +177,7 @@ private:
 	//! Contour storage memory
 	CvMemStorage *m_storage;
 	//! External contour of the blob (crack codes)
-	CBlobContour m_externalContour;
+  CBlobContour m_externalContour;
 	//! Internal contours (crack codes)
 	t_contourList m_internalContours;
 
@@ -198,4 +198,4 @@ private:
 
 };
 
-#endif //CBLOB_INSPECTA_INCLUDED
+#endif // _CVBLOBS_BLOB_H_
