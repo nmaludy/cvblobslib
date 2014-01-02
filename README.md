@@ -27,11 +27,11 @@ New Includes
 ============
 For convenience i have created a few new header files in cvblobs/ and cvblobs2/
 to ease use of the library.
-cvblobs/CvBlobs.h (and cvblobs2/CvBlobs.h) is a universal include header that includes
+- cvblobs/CvBlobs.h (and cvblobs2/CvBlobs.h) is a universal include header that includes
 all header files in the library.
-cvblobs/CvBlobsDefs.h (and cvblobs2/CvBlobsDefs.h) header file which #defines all
+- cvblobs/CvBlobsDefs.h (and cvblobs2/CvBlobsDefs.h) header file which #defines all
 macros for use in the library.
-cvblobs/CvBlobsFwd.h (and cvblobs2/CvBlobsFwd.h) is a header that forward declares
+- cvblobs/CvBlobsFwd.h (and cvblobs2/CvBlobsFwd.h) is a header that forward declares
 all classes, typedefs, and macros. This header only #includes CvBlobsDefs.h. 
 
 Users should #include CvBlobsFwd.h in header files and CvBlobs.h in source files.
