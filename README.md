@@ -17,6 +17,25 @@ Steps to build using cmake:
 - make
 - sudo make install
 
+Backwards Compatibility
+=======================
+Many of the coding standards defined below break the API of the old versions of CvBlobs.
+In order to maintain backwards compatibility the cvblobs/* headers will still be available.
+The new API will be placed into cvblobs2/.
+
+New Includes
+============
+For convenience i have created a few new header files in cvblobs/ and cvblobs2/
+to ease use of the library.
+cvblobs/CvBlobs.h (and cvblobs2/CvBlobs.h) is a universal include header that includes
+all header files in the library.
+cvblobs/CvBlobsDefs.h (and cvblobs2/CvBlobsDefs.h) header file which #defines all
+macros for use in the library.
+cvblobs/CvBlobsFwd.h (and cvblobs2/CvBlobsFwd.h) is a header that forward declares
+all classes, typedefs, and macros. This header only #includes CvBlobsDefs.h. 
+
+Users should #include CvBlobsFwd.h in header files and CvBlobs.h in source files.
+
 
 Coding Standards
 =====================
@@ -34,7 +53,10 @@ Coding Standards
 - [ ] Function arguments will be camel cased: Example numBlobs
 - [ ] Local variables will be underscore delimited: Example my_local_var
 - [ ] Pointers will be prefixed with a p: Example p_local_ptr, pBlobArg, mpPrivateBlob
-- [ ] Header guards will be formattted _CVBLOBSLIB_FILENAME_H_
+- [ ] All file names will be camel case.
+- [ ] All directories will be lower case with underscores separating words
+- [x] Header guards will be formattted _CVBLOBS_FILENAME_H_ if in cvblobs/ directory
+- [x] Header guards will be formattted _CVBLOBS2_FILENAME_H_ if in cvblobs2/ directory
 - [ ] Prefer forward declarations to #include in headers
 - [x] Do not use the "using" keyword
 - [x] All includes will use <> and not quotes
