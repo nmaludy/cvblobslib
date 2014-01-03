@@ -29,7 +29,7 @@ For convenience i have created a few new header files in cvblobs/ and cvblobs2/
 to ease use of the library.
 - cvblobs/CvBlobs.h (and cvblobs2/CvBlobs.h) is a universal include header that includes
 all header files in the library.
-- cvblobs/CvBlobsDefs.h (and cvblobs2/CvBlobsDefs.h) header file which #defines all
+- cvblobs/CvBlobsDefs.h (and cvblobs2/CvBlobsDefs.h) header file that #defines all
 macros for use in the library.
 - cvblobs/CvBlobsFwd.h (and cvblobs2/CvBlobsFwd.h) is a header that forward declares
 all classes, typedefs, and macros. This header only #includes CvBlobsDefs.h. 
@@ -41,7 +41,8 @@ Coding Standards
 =====================
 - [ ] All classes begin with a capital letter (example: Blob)
 - [ ] Everything will be defined within the cvblobs namespace
-- [ ] Do not use exceptions
+- [ ] Do not explicitly throw exceptions from our code. Ie never write the "throw" keyword. Exceptions may be thrown from STL functions as we use STL containers. I would like to guarauntee not throwing exceptions from our code, but this is very hard in C++.
+- [ ] Document all exceptions that may be thrown from STL usage in a function.
 - [ ] Class constructors will perform complex work which could thrown an exception
 - [ ] Function names start with a lower case and are camel cased names
 - [ ] Accessor functions do not start with the word "get" instead just use the name of what is being accessed. Example: instead of GetBlob(i) it should be blob(i)

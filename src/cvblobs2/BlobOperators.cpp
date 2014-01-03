@@ -8,7 +8,7 @@
 #include <limits.h>
 #include <cvblobs2/BlobOperators.h>
 
-CVBLOBS_BEGIN_NAMESPACE;
+CVBLOBS_BEGIN_NAMESPACE
 
 /***************************************************************************
   Implementació de les classes per al càlcul de característiques sobre el blob
@@ -511,4 +511,4 @@ void RegistraTotsOperadors( t_OperadorBlobFactory &fabricaOperadorsBlob )
 
 #endif	//BLOB_OBJECT_FACTORY
 
-CVBLOBS_END_NAMESPACE;
+CVBLOBS_END_NAMESPACE

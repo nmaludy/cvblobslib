@@ -17,7 +17,7 @@
 //! Max order of calculated moments
 #define MAX_MOMENTS_ORDER		3
 
-CVBLOBS_BEGIN_NAMESPACE;
+CVBLOBS_BEGIN_NAMESPACE
 
 //! Blob contour class (in crack code)
 class BlobContour
@@ -95,7 +95,7 @@ inline const CvPoint& BlobContour::startPoint() const
   return mStartPoint;
 }
 
-CVBLOBS_END_NAMESPACE;
+CVBLOBS_END_NAMESPACE
 
 #endif // _CVBLOBS_BLOBCONTOUR_H_
 

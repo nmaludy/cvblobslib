@@ -27,7 +27,7 @@ class CvSeq;
 
 //////////////
 // CvBlobsLib forward declares
-CVBLOBS_BEGIN_NAMESPACE;
+CVBLOBS_BEGIN_NAMESPACE
 
 class Blob;
 class BlobContour;
@@ -55,6 +55,6 @@ typedef CvSeq* t_PointList;
 typedef unsigned int t_labelType;
 typedef std::list<BlobContour> t_contourList;
 
-CVBLOBS_END_NAMESPACE;
+CVBLOBS_END_NAMESPACE
 
 #endif // _CVBLOBSLIB_BLOBFWD_H_

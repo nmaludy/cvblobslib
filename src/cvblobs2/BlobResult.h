@@ -29,16 +29,7 @@ MODIFICATIONS (Modification, Author, Date):
 #include <cvblobs2/BlobOperators.h>
 #include <cvblobs2/ComponentLabeling.h>
 
-CVBLOBS_BEGIN_NAMESPACE;
-
-#ifdef MATRIXCV_ACTIU
-	#include "matrixCV.h"
-#else
-	// llibreria STL
-	#include <vector>
-	//! Vector de doubles
-	typedef std::vector<double> double_stl_vector;
-#endif
+CVBLOBS_BEGIN_NAMESPACE
 
 /**************************************************************************
 	Filtres / Filters
@@ -65,10 +56,6 @@ CVBLOBS_BEGIN_NAMESPACE;
 	Excepcions / Exceptions
 **************************************************************************/
 
-//! Excepcions llençades per les funcions:
-#define EXCEPTION_BLOB_OUT_OF_BOUNDS	1000
-#define EXCEPCIO_CALCUL_BLOBS			1001
-
 /** 
 	Classe que conté un conjunt de blobs i permet extreure'n propietats 
 	o filtrar-los segons determinats criteris.
@@ -85,10 +72,10 @@ public:
 	BlobResult();
 	//! constructor a partir d'una imatge
 	//! Image constructor, it creates an object with the blobs of the image
-	BlobResult(IplImage *source, IplImage *mask, uchar backgroundColor);
+	// BlobResult(IplImage* pSource, IplImage* pMask, uchar backgroundColor);
 	//! constructor de còpia
 	//! Copy constructor
-	BlobResult( const BlobResult &source );
+	BlobResult(const BlobResult& source);
 	//! Destructor
 	virtual ~BlobResult();
 
@@ -97,80 +84,73 @@ public:
 	BlobResult& operator=(const BlobResult& source);
 	//! operador + per concatenar dos BlobResult
 	//! Addition operator to concatenate two sets of blobs
-	BlobResult operator+( const BlobResult& source ) const;
-	
-	//! Afegeix un blob al conjunt
-	//! Adds a blob to the set of blobs
-	void AddBlob( BlobPtr blob );
+	BlobResult operator+(const BlobResult& source) const;
+  //! Inplace addition operator to concatenate another set of blobs to this one
+	BlobResult& operator+=(const BlobResult& source);
 
-#ifdef MATRIXCV_ACTIU
-	//! Calcula un valor sobre tots els blobs de la classe retornant una MatrixCV
-	//! Computes some property on all the blobs of the class
-	double_vector GetResult( funcio_calculBlob *evaluador ) const;
-#endif
+  //! swaps the blobs in other with the blobs in this
+  void swap(BlobResult& other);
+  
+  //! Afegeix un blob al conjunt
+	//! Adds a blob to the set of blobs
+	void addBlob(BlobPtr blob);
+
 	//! Calcula un valor sobre tots els blobs de la classe retornant un std::vector<double>
 	//! Computes some property on all the blobs of the class
-	double_stl_vector GetSTLResult( funcio_calculBlob *evaluador ) const;
+  std::vector<double> result(BlobOperator* pOperator) const;
 	
 	//! Calcula un valor sobre un blob de la classe
 	//! Computes some property on one blob of the class
-	double GetNumber( int indexblob, funcio_calculBlob *evaluador ) const;
+	double number(int blobIndex, BlobOperator* pOperator) const;
 
 	//! Retorna aquells blobs que compleixen les condicions del filtre en el destination 
 	//! Filters the blobs of the class using some property
-	void Filter(BlobResult &dst,
-				int filterAction, funcio_calculBlob *evaluador, 
-				int condition, double lowLimit, double highLimit = 0 );
+	void filter(BlobResult& dst,
+              int filterAction,
+              BlobOperator* pOperator,
+              int condition,
+              double lowLimit,
+              double highLimit = 0);
 			
 	//! Retorna l'enèssim blob segons un determinat criteri
 	//! Sorts the blobs of the class acording to some criteria and returns the n-th blob
-	void GetNthBlob( funcio_calculBlob *criteri, int nBlob, Blob &dst ) const;
+	void nthBlob(BlobOperator* pCriteria,
+               std::size_t nBlob,
+               Blob& dst) const;
 	
 	//! Retorna el blob enèssim
 	//! Gets the n-th blob of the class ( without sorting )
-	Blob GetBlob(int indexblob) const;
-	
-	BlobPtr GetBlobPtr(int indexblob);
+	const Blob& blob(std::size_t i) const;
 	
 	//! Elimina tots els blobs de l'objecte
 	//! Clears all the blobs of the class
-	void ClearBlobs();
+	void clearBlobs();
 
 	//! Escriu els blobs a un fitxer
 	//! Prints some features of all the blobs in a file
-	void PrintBlobs( char *nom_fitxer ) const;
-
+	void printBlobs(char* pFileName) const;
 
 //Metodes GET/SET
 
 	//! Retorna el total de blobs
 	//! Gets the total number of blobs
-	int GetNumBlobs() const 
-	{ 
-		return(m_blobs.size()); 
-	}
+  inline std::size_t numBlobs() const;
 
 	//! Clears a calculated property from blobs
-	void RemoveProperty( const std::string &name );
+	void removeProperty(const std::string& propertyName);
 	
-private:
-
-	//! Funció per gestionar els errors
-	//! Function to manage the errors
-	void RaiseError(const int errorCode) const;
-
-	//! Does the Filter method job
-	void DoFilter(BlobResult &dst,
-				int filterAction, funcio_calculBlob *evaluador, 
-				int condition, bool inlineFilter, double lowLimit, double highLimit = 0);
-
 protected:
 
 	//! Vector amb els blobs
 	//! Vector with all the blobs
-	Blob_vector		m_blobs;
+	Blob_vector		mBlobs;
 };
 
-CVBLOBS_END_NAMESPACE;
+inline std::size_t BlobResult::numBlobs() const 
+{ 
+  return mBlobs.size();
+}
+
+CVBLOBS_END_NAMESPACE
 
 #endif // _CVBLOBS2_BLOBRESULT_H_

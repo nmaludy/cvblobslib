@@ -1,7 +1,7 @@
 #include <cvblobs2/BlobContour.h>
 #include <opencv/cxcore.h>
 
-CVBLOBS_BEGIN_NAMESPACE;
+CVBLOBS_BEGIN_NAMESPACE
 
 BlobContour::BlobContour()
 {
@@ -259,4 +259,4 @@ t_PointList BlobContour::contourPoints()
 	return mpContourPoints;
 }
 
-CVBLOBS_END_NAMESPACE;
+CVBLOBS_END_NAMESPACE

@@ -1,3 +1,4 @@
+
 /************************************************************************
   			BlobResult.cpp
   			
@@ -25,7 +26,7 @@ MODIFICACIONS (Modificació, Autor, Data):
 	#include <afxwin.h>			//suport per a AfxMessageBox
 #endif
 
-CVBLOBS_BEGIN_NAMESPACE;
+CVBLOBS_BEGIN_NAMESPACE
 
 /**************************************************************************
 		Constructors / Destructors
@@ -55,9 +56,8 @@ CVBLOBS_BEGIN_NAMESPACE;
 - MODIFICATION: Date. Author. Description.
 */
 BlobResult::BlobResult()
-{
-	m_blobs = Blob_vector();
-}
+    : mBlobs()
+{}
 
 /**
 - FUNCIÓ: BlobResult
@@ -100,21 +100,21 @@ BlobResult::BlobResult()
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
-BlobResult::BlobResult(IplImage *source, IplImage *mask, uchar backgroundColor )
-{
-	bool success;
+// BlobResult::BlobResult(IplImage *source, IplImage *mask, uchar backgroundColor )
+// {
+// 	bool success;
 
-	try
-	{
-		success = ComponentLabeling( source, mask, backgroundColor, m_blobs );
-	}
-	catch(...)
-	{
-		success = false;
-	}
+// 	try
+// 	{
+// 		success = ComponentLabeling( source, mask, backgroundColor, mBlobs );
+// 	}
+// 	catch(...)
+// 	{
+// 		success = false;
+// 	}
 
-	if( !success ) throw EXCEPCIO_CALCUL_BLOBS;
-}
+// 	if( !success ) throw EXCEPCIO_CALCUL_BLOBS;
+// }
 
 /**
 - FUNCIÓ: BlobResult
@@ -140,16 +140,9 @@ BlobResult::BlobResult(IplImage *source, IplImage *mask, uchar backgroundColor )
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
-BlobResult::BlobResult( const BlobResult &source )
-{
-	m_blobs = Blob_vector( source.GetNumBlobs() );
-	
-	// creem el nou a partir del passat com a paràmetre
-	m_blobs = Blob_vector( source.GetNumBlobs() );
-	
-	std::copy( source.m_blobs.begin(), source.m_blobs.end(), m_blobs.begin() );	
-}
-
+BlobResult::BlobResult(const BlobResult& source)
+    : mBlobs(source.mBlobs)
+{}
 
 
 /**
@@ -175,7 +168,7 @@ BlobResult::BlobResult( const BlobResult &source )
 */
 BlobResult::~BlobResult()
 {
-	ClearBlobs();
+	clearBlobs();
 }
 
 /**************************************************************************
@@ -207,15 +200,12 @@ BlobResult::~BlobResult()
 */
 BlobResult& BlobResult::operator=(const BlobResult& source)
 {
-	// si ja són el mateix, no cal fer res
 	if (this != &source)
 	{
-		// free previous blobs
-		m_blobs.clear();
-		// create a copy of source blobs
-		m_blobs = Blob_vector( source.GetNumBlobs() );
-		
-		std::copy(source.m_blobs.begin(), source.m_blobs.end(), m_blobs.begin());
+    // use copy-swap idiom here to be safe in the face of allocation exceptions
+    BlobResult tmp(source);
+    // swap contents of tmp with this
+    swap(tmp);
 	}
 	return *this;
 }
@@ -246,18 +236,35 @@ BlobResult& BlobResult::operator=(const BlobResult& source)
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
-BlobResult BlobResult::operator+( const BlobResult& source ) const
-{	
-	// create a copy of current blobs
-	BlobResult result( *this );
-	int numblobs = result.GetNumBlobs();
-		
-	// allocate space for new blobs
-	result.m_blobs.resize( result.GetNumBlobs() + source.GetNumBlobs() );
-	// copy new blobs	
-	std::copy( source.m_blobs.begin(), source.m_blobs.end(), result.m_blobs.begin() + numblobs );
-	
+BlobResult BlobResult::operator+(const BlobResult& source) const
+{
+	// create a copy of souce's blobs as the result
+	BlobResult result(source);
+  // add this' blobs to result
+	result += *this;
 	return result;
+}
+
+BlobResult& BlobResult::operator+=(const BlobResult& source)
+{
+  // use copy-swap idiom here to be safe in the face of allocation exceptions
+  // create a copy of source's blobs
+  Blob_vector tmp_blobs = source.mBlobs;
+
+	// allocate space for blobs from this 
+  tmp_blobs.resize(tmp_blobs.size() + mBlobs.size());
+
+	// add blobs from this to blobs from source
+  tmp_blobs.insert(tmp_blobs.end(), mBlobs.begin(), mBlobs.end());
+  
+  // swap the containers so that mBlobs can be safely updated 
+  std::swap(mBlobs, tmp_blobs);
+	return *this;
+}
+
+void BlobResult::swap(BlobResult& other)
+{
+  std::swap(mBlobs, other.mBlobs);
 }
 
 /**************************************************************************
@@ -276,63 +283,10 @@ BlobResult BlobResult::operator+( const BlobResult& source ) const
 - DATA DE CREACIÓ: 2006/03/01
 - MODIFICACIÓ: Data. Autor. Descripció.
 */
-void BlobResult::AddBlob( BlobPtr blob )
+void BlobResult::addBlob(BlobPtr blob)
 {
-	m_blobs.push_back( blob );
+	mBlobs.push_back(blob);
 }
-
-
-#ifdef MATRIXCV_ACTIU
-
-/**
-- FUNCIÓ: GetResult
-- FUNCIONALITAT: Calcula el resultat especificat sobre tots els blobs de la classe
-- PARÀMETRES:
-	- evaluador: Qualsevol objecte derivat de COperadorBlob
-- RESULTAT:
-	- Retorna un array de double's amb el resultat per cada blob
-- RESTRICCIONS:
-- AUTOR: Ricard Borràs
-- DATA DE CREACIÓ: 25-05-2005.
-- MODIFICACIÓ: Data. Autor. Descripció.
-*/
-/**
-- FUNCTION: GetResult
-- FUNCTIONALITY: Computes the function evaluador on all the blobs of the class
-				 and returns a vector with the result
-- PARAMETERS:
-	- evaluador: function to apply to each blob (any object derived from the 
-				 COperadorBlob class )
-- RESULT:
-	- vector with all the results in the same order as the blobs
-- RESTRICTIONS:
-- AUTHOR: Ricard Borràs
-- CREATION DATE: 25-05-2005.
-- MODIFICATION: Date. Author. Description.
-*/
-double_vector BlobResult::GetResult( funcio_calculBlob *evaluador ) const
-{
-	if( GetNumBlobs() <= 0 )
-	{
-		return double_vector();
-	}
-
-	// definim el resultat
-	double_vector result = double_vector( GetNumBlobs() );
-	// i iteradors sobre els blobs i el resultat
-	double_vector::iterator itResult = result.GetIterator();
-	Blob_vector::const_iterator itBlobs = m_blobs.begin();
-
-	// avaluem la funció en tots els blobs
-	while( itBlobs != m_blobs.end() )
-	{
-		*itResult = (*evaluador).GetOperatorResult(**itBlobs);
-		itBlobs++;
-		itResult++;
-	}
-	return result;
-}
-#endif
 
 /**
 - FUNCIÓ: GetSTLResult
@@ -360,25 +314,23 @@ double_vector BlobResult::GetResult( funcio_calculBlob *evaluador ) const
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
-double_stl_vector BlobResult::GetSTLResult( funcio_calculBlob *evaluador ) const
+std::vector<double> BlobResult::result(BlobOperator* pOperator) const
 {
-	if( GetNumBlobs() <= 0 )
+  std::vector<double> result;
+	if (numBlobs() <= 0)
 	{
-		return double_stl_vector();
+		return result;
 	}
 
-	// definim el resultat
-	double_stl_vector result = double_stl_vector( GetNumBlobs() );
-	// i iteradors sobre els blobs i el resultat
-	double_stl_vector::iterator itResult = result.begin();
-	Blob_vector::const_iterator itBlobs = m_blobs.begin();
+  // make enough space for each blob's result
+  result.reserve(numBlobs());
 
-	// avaluem la funció en tots els blobs
-	while( itBlobs != m_blobs.end() )
-	{
-		*itResult = (*evaluador).GetOperatorResult(**itBlobs);
-		itBlobs++;
-		itResult++;
+  // evaluate pOperator for each blob
+	for (Blob_vector::const_iterator it = mBlobs.begin();
+       it != mBlobs.end();
+       ++it)
+  {
+    result.push_back( pOperator->GetOperatorResult(**it) );
 	}
 	return result;
 }
@@ -409,11 +361,11 @@ double_stl_vector BlobResult::GetSTLResult( funcio_calculBlob *evaluador ) const
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
-double BlobResult::GetNumber( int indexBlob, funcio_calculBlob *evaluador ) const
+double BlobResult::number(int blobIndex, BlobOperator* pOperator) const
 {
-	if( indexBlob < 0 || indexBlob >= GetNumBlobs() )
-		RaiseError( EXCEPTION_BLOB_OUT_OF_BOUNDS );
-	return (*evaluador).GetOperatorResult( *m_blobs[indexBlob] );
+  // use range checked at() to be safe
+  BlobPtr p_blob = mBlobs.at(blobIndex);
+	return pOperator->GetOperatorResult(*p_blob);
 }
 
 /////////////////////////// FILTRAT DE BLOBS ////////////////////////////////////
@@ -470,93 +422,81 @@ double BlobResult::GetNumber( int indexBlob, funcio_calculBlob *evaluador ) cons
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
-void BlobResult::Filter(BlobResult &dst, 
-						 int filterAction, 
-						 funcio_calculBlob *evaluador, 
-						 int condition, 
-						 double lowLimit, double highLimit /*=0*/)
-							
+void BlobResult::filter(BlobResult& dst,
+                        int filterAction, 
+                        BlobOperator* pOperator,
+                        int condition, 
+                        double lowLimit,
+                        double highLimit /*=0*/)
 {
-   //int numBlobs = GetNumBlobs();
+	if (pOperator == NULL || numBlobs() == 0)
+  {
+    return;
+  }
+  
+  bool b_inline_filter = (&dst == this);
 
-	// do the job
-	DoFilter(dst, filterAction, evaluador, condition, &dst == this, lowLimit, highLimit );
-
-	// inline operation: remove previous blobs
-	/*if( &dst == this ) 
+  std::size_t num_blobs_erased = 0;
+	bool b_result_passed = false;
+  bool b_selected_blob = false;
+  
+	// evaluate blobs using specified operator
+  std::vector<double> blob_results = result(pOperator);
+  const std::size_t num_results = blob_results.size();
+  double result = 0.0;
+  
+	for (std::size_t i = 0; i < num_results; ++i)
 	{
-		// delete original blob in inline operations ( it will be repeated if they pass the filter )
-		m_blobs.erase( m_blobs.begin(), m_blobs.begin()+numBlobs );
-	}*/
-}
-
-
-//! Does the Filter method job
-void BlobResult::DoFilter(BlobResult &dst, int filterAction, funcio_calculBlob *evaluador, 
-						   int condition, bool inlineFilter, double lowLimit, double highLimit/* = 0*/)
-{
-	int i, numBlobs, numBlobsErased;
-	bool resultavaluacio = false, selectedBlob;
-	double_stl_vector avaluacioBlobs;
-	double_stl_vector::iterator itavaluacioBlobs;
-	BlobPtr newblob;
-	
-	if( GetNumBlobs() <= 0 ) return;
-	if( !evaluador ) return;
-	//evaluate blobs using specified operator
-	avaluacioBlobs = GetSTLResult(evaluador);
-	itavaluacioBlobs = avaluacioBlobs.begin();
-	
-	numBlobs = GetNumBlobs();
-	numBlobsErased = 0;
-
-	for(i=0;i<numBlobs;i++, itavaluacioBlobs++)
-	{
-		switch(condition)
+    result = blob_results[i];
+		switch (condition)
 		{
 			case B_EQUAL:
-				resultavaluacio= *itavaluacioBlobs == lowLimit;
+				b_result_passed = (result == lowLimit);
 				break;
 			case B_NOT_EQUAL:
-				resultavaluacio= *itavaluacioBlobs != lowLimit;
+				b_result_passed = (result != lowLimit);
 				break;
 			case B_GREATER:
-				resultavaluacio= *itavaluacioBlobs > lowLimit;
+				b_result_passed = (result > lowLimit);
 				break;
 			case B_LESS:
-				resultavaluacio= *itavaluacioBlobs < lowLimit;
+				b_result_passed = (result < lowLimit);
 				break;
 			case B_GREATER_OR_EQUAL:
-				resultavaluacio= *itavaluacioBlobs >= lowLimit;
+				b_result_passed = (result >= lowLimit);
 				break;
 			case B_LESS_OR_EQUAL:
-				resultavaluacio= *itavaluacioBlobs <= lowLimit;
+				b_result_passed = (result <= lowLimit);
 				break;
 			case B_INSIDE:
-				resultavaluacio=( *itavaluacioBlobs >= lowLimit) && ( *itavaluacioBlobs <= highLimit); 
+				b_result_passed = (result >= lowLimit) && (result <= highLimit); 
 				break;
 			case B_OUTSIDE:
-				resultavaluacio=( *itavaluacioBlobs < lowLimit) || ( *itavaluacioBlobs > highLimit); 
+				b_result_passed = (result < lowLimit) || (result > highLimit); 
 				break;
-		}
+		} // end switch condition
 		
 		// blob is selected?
-		selectedBlob = (  resultavaluacio && filterAction == B_INCLUDE ) || 
-					   ( !resultavaluacio && filterAction == B_EXCLUDE );
+		b_selected_blob = ( (b_result_passed && filterAction == B_INCLUDE ) || 
+                        (!b_result_passed && filterAction == B_EXCLUDE ) );
 
-		// add to dst if not inline operation (for inline operation we don't have to do nothing)
-		if( !inlineFilter && selectedBlob )
+		// add to dst if not inline operation
+    // (for inline operation we don't have to do anything)
+		if (!b_inline_filter && b_selected_blob)
 		{
-			dst.AddBlob( m_blobs[i-numBlobsErased] );
+			dst.addBlob( mBlobs[i - num_blobs_erased] );
 		}
-		// remove from origin for inline operation (for not inline we don't have to do nothing)
-		if(inlineFilter && !selectedBlob ) 
+		// remove from origin for inline operation
+    // (for not inline we don't have to do anything)
+		if (b_inline_filter && !b_selected_blob)
 		{
-			m_blobs.erase(m_blobs.begin() + i - numBlobsErased );
-			numBlobsErased++;
+			mBlobs.erase(mBlobs.begin() + i - num_blobs_erased);
+			++num_blobs_erased;
 		}
-	}
+	} // end for each blob
 }
+
+
 /**
 - FUNCIÓ: GetBlob
 - FUNCIONALITAT: Retorna un blob si aquest existeix (index != -1)
@@ -579,19 +519,10 @@ void BlobResult::DoFilter(BlobResult &dst, int filterAction, funcio_calculBlob *
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
-Blob BlobResult::GetBlob(int indexblob) const
-{	
-	if( indexblob < 0 || indexblob >= GetNumBlobs() )
-		RaiseError( EXCEPTION_BLOB_OUT_OF_BOUNDS );
-
-	return *m_blobs[indexblob];
-}
-BlobPtr BlobResult::GetBlobPtr(int indexblob)
-{	
-	if( indexblob < 0 || indexblob >= GetNumBlobs() )
-		RaiseError( EXCEPTION_BLOB_OUT_OF_BOUNDS );
-
-	return m_blobs[indexblob];
+const Blob& BlobResult::blob(std::size_t blobIndex) const
+{
+  // use at for safe range checking
+	return *mBlobs.at(blobIndex);
 }
 
 /**
@@ -624,47 +555,43 @@ BlobPtr BlobResult::GetBlobPtr(int indexblob)
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
-void BlobResult::GetNthBlob( funcio_calculBlob *criteri, int nBlob, Blob &dst ) const
+void BlobResult::nthBlob(BlobOperator* pCriteria,
+                         std::size_t nBlob,
+                         Blob& dst) const
 {
-	// verifiquem que no estem accedint fora el vector de blobs
-	if( nBlob < 0 || nBlob >= GetNumBlobs() )
+  // range check
+	if (nBlob >= numBlobs())
 	{
-		//RaiseError( EXCEPTION_BLOB_OUT_OF_BOUNDS );
 		dst = Blob();
 		return;
 	}
 
-	double_stl_vector avaluacioBlobs, avaluacioBlobsOrdenat;
-	double valorEnessim;
+  // @todo make this more efficient
 
-	//avaluem els blobs amb la funció pertinent	
-	avaluacioBlobs = GetSTLResult(criteri);
+	// evaluate the blobs with the pCriteria function
+  std::vector<double> blob_results = result(pCriteria);
+  std::vector<double> blob_results_sorted(numBlobs());
 
-	avaluacioBlobsOrdenat = double_stl_vector( GetNumBlobs() );
+  // obtain the first nBlob results in descending order
+	std::partial_sort_copy( blob_results.begin(), 
+                          blob_results.end(),
+                          blob_results_sorted.begin(), 
+                          blob_results_sorted.end(),
+                          std::greater<double>() );
 
-	// obtenim els nBlob primers resultats (en ordre descendent)
-	std::partial_sort_copy( avaluacioBlobs.begin(), 
-						    avaluacioBlobs.end(),
-						    avaluacioBlobsOrdenat.begin(), 
-						    avaluacioBlobsOrdenat.end(),
-						    std::greater<double>() );
-
-	valorEnessim = avaluacioBlobsOrdenat[nBlob];
-
-	// busquem el primer blob que té el valor n-ssim
-	double_stl_vector::const_iterator itAvaluacio = avaluacioBlobs.begin();
-
-	bool trobatBlob = false;
-	int indexBlob = 0;
-	while( itAvaluacio != avaluacioBlobs.end() && !trobatBlob )
+	double nth_value = blob_results_sorted[nBlob];
+  std::size_t blob_index = 0;
+  
+	// seek first blob that has the value n
+	for (std::vector<double>::const_iterator iter = blob_results.begin();
+       iter != blob_results.begin();
+       ++iter, ++blob_index)
 	{
-		if( *itAvaluacio == valorEnessim )
+		if (*iter == nth_value)
 		{
-			trobatBlob = true;
-			dst = Blob( GetBlob(indexBlob));
+			dst = Blob( blob(blob_index) );
+      break;
 		}
-		itAvaluacio++;
-		indexBlob++;
 	}
 }
 
@@ -689,60 +616,10 @@ void BlobResult::GetNthBlob( funcio_calculBlob *criteri, int nBlob, Blob &dst ) 
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
-void BlobResult::ClearBlobs()
+void BlobResult::clearBlobs()
 {
-	m_blobs.clear();
+	mBlobs.clear();
 }
-
-/**
-- FUNCIÓ: RaiseError
-- FUNCIONALITAT: Funció per a notificar errors al l'usuari (en debug) i llença
-			   les excepcions
-- PARÀMETRES:
-	- errorCode: codi d'error
-- RESULTAT: 
-	- Ensenya un missatge a l'usuari (en debug) i llença una excepció
-- RESTRICCIONS:
-- AUTOR: Ricard Borràs Navarra
-- DATA DE CREACIÓ: 25-05-2005.
-- MODIFICACIÓ: Data. Autor. Descripció.
-*/
-/*
-- FUNCTION: RaiseError
-- FUNCTIONALITY: Error handling function
-- PARAMETERS:
-	- errorCode: reason of the error
-- RESULT:
-	- in _SHOW_ERRORS version, shows a message box with the error. In release is silent.
-	  In both cases throws an exception with the error.
-- RESTRICTIONS:
-- AUTHOR: Ricard Borràs
-- CREATION DATE: 25-05-2005.
-- MODIFICATION: Date. Author. Description.
-*/
-void BlobResult::RaiseError(const int errorCode) const
-{
-//! Do we need to show errors?
-#ifdef _SHOW_ERRORS
-	CString msg, format = "Error en BlobResult: %s";
-
-	switch (errorCode)
-	{
-	case EXCEPTION_BLOB_OUT_OF_BOUNDS:
-		msg.Format(format, "Intentant accedir a un blob no existent");
-		break;
-	default:
-		msg.Format(format, "Codi d'error desconegut");
-		break;
-	}
-
-	AfxMessageBox(msg);
-
-#endif
-	throw errorCode;
-}
-
-
 
 /**************************************************************************
 		Auxiliars / Auxiliary functions
@@ -772,32 +649,33 @@ void BlobResult::RaiseError(const int errorCode) const
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
-void BlobResult::PrintBlobs( char *nom_fitxer ) const
+void BlobResult::printBlobs(char* pFileName) const
 {
-	double_stl_vector area, /*perimetre,*/ exterior, compacitat, longitud, 
-					  externPerimeter, perimetreConvex, perimetre;
-	int i;
-	FILE *fitxer_sortida;
+  std::vector<double> area             = result( BlobGetArea() );
+	std::vector<double> perimeter        = result( BlobGetPerimeter() );
+  std::vector<double> exterior         = result( BlobGetExterior() );
+  std::vector<double> compactness      = result( BlobGetCompactness() );
+  std::vector<double> length           = result( BlobGetLength() );
+  std::vector<double> extern_perimeter = result( BlobGetExternPerimeter() );
+  std::vector<double> hull_perimeter   = result( BlobGetHullPerimeter() );
 
- 	area      = GetSTLResult( BlobGetArea());
-	perimetre = GetSTLResult( BlobGetPerimeter());
-	exterior  = GetSTLResult( BlobGetExterior());
-	compacitat = GetSTLResult(BlobGetCompactness());
-	longitud  = GetSTLResult( BlobGetLength());
-	externPerimeter = GetSTLResult( BlobGetExternPerimeter());
-	perimetreConvex = GetSTLResult( BlobGetHullPerimeter());
-
-	fitxer_sortida = fopen( nom_fitxer, "w" );
-
-	for(i=0; i<GetNumBlobs(); i++)
+  FILE* p_file = fopen(pFileName, "w" );
+  const std::size_t num_blobs = numBlobs();
+  
+	for (std::size_t i = 0; i < num_blobs; ++i)
 	{
-		fprintf( fitxer_sortida, "blob %d ->\t a=%7.0f\t p=%8.2f (%8.2f extern)\t pconvex=%8.2f\t ext=%.0f\t c=%3.2f\t l=%8.2f\n",
-				 i, area[i], perimetre[i], externPerimeter[i], perimetreConvex[i], exterior[i], compacitat[i], longitud[i] );
+		fprintf(p_file, "blob %lu ->\t a=%7.0f\t p=%8.2f (%8.2f extern)\t pconvex=%8.2f\t ext=%.0f\t c=%3.2f\t l=%8.2f\n",
+            i,
+            area[i],
+            perimeter[i],
+            extern_perimeter[i],
+            hull_perimeter[i],
+            exterior[i],
+            compactness[i],
+            length[i] );
 	}
-	fclose( fitxer_sortida );
-
+	fclose(p_file);
 }
-
 
 /*
 - FUNCTION: RemoveProperty
@@ -810,15 +688,14 @@ void BlobResult::PrintBlobs( char *nom_fitxer ) const
 - CREATION DATE: 19-11-2009.
 - MODIFICATION: Date. Author. Description.
 */
-void BlobResult::RemoveProperty( const std::string &name )
+void BlobResult::removeProperty(const std::string& propertyName)
 {
-	Blob_vector::iterator pBlobs = m_blobs.begin();
-
-	while( pBlobs != m_blobs.end() )
-	{
-		(*pBlobs)->resetProperty(name);
-		pBlobs++;
+  for (Blob_vector::iterator iter = mBlobs.begin();
+       iter != mBlobs.end();
+       ++iter)
+  {
+    (*iter)->resetProperty(propertyName);
 	}
 }
 
-CVBLOBS_END_NAMESPACE;
+CVBLOBS_END_NAMESPACE

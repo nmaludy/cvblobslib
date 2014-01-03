@@ -10,7 +10,7 @@
 static const CvPoint freemanCodeIncrement[8] =
     { {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}, {0, 1}, {1, 1} };
 
-CVBLOBS_BEGIN_NAMESPACE;
+CVBLOBS_BEGIN_NAMESPACE
 
 /**
 - FUNCIÓ: 
@@ -409,4 +409,4 @@ CvPoint tracer( IplImage *image, IplImage *maskImage, CvPoint P, bool *visitedPo
 	return pNext;
 }
 
-CVBLOBS_END_NAMESPACE;
+CVBLOBS_END_NAMESPACE

@@ -20,7 +20,7 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}" )
 # verbose makefile
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Verbose" FORCE)
 # warn all and -fPIC for shared build
-set(CMAKE_CXX_FLAGS "-Wall -fPIC -fno-strict-aliasing -ansi -Werror")
+set(CMAKE_CXX_FLAGS "-Wall -Werror -pedantic -ansi -fPIC -fno-strict-aliasing")
 
 ###########
 # Project #
@@ -115,8 +115,10 @@ endif (DEFINED OpenCV_LIB_DIR AND
 
 # cache variables
 # use FORCE to update the cache with the latest value
-set(OpenCV_LIB_DIR ${OpenCV_LIB_DIR} CACHE PATH "Directory where OpenCV libraries are located" FORCE)
-set(OpenCV_INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS} CACHE PATH "Directory where OpenCV headers are located" FORCE)
+set(OpenCV_LIB_DIR ${OpenCV_LIB_DIR} CACHE PATH 
+    "Directory where OpenCV libraries are located" FORCE)
+set(OpenCV_INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS} CACHE PATH 
+    "Directory where OpenCV headers are located" FORCE)
 
 ##################
 # Debug Messages #
@@ -160,7 +162,8 @@ install(TARGETS ${CVBLOBS_LIBRARY_NAME}
 )
 
 # install libblob.so link
-install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${LIBBLOB_LINK_NAME} DESTINATION lib${LIB_SUFFIX})
+install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${LIBBLOB_LINK_NAME}
+         DESTINATION lib${LIB_SUFFIX})
 
 ####################
 # Uninstall target #

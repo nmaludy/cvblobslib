@@ -12,7 +12,7 @@
 //! Factor de conversió de graus a radians
 #define DEGREE2RAD		(CV_PI / 180.0)
 
-CVBLOBS_BEGIN_NAMESPACE;
+CVBLOBS_BEGIN_NAMESPACE
 
 //! Classe d'on derivarem totes les operacions sobre els blobs
 //! Interface to derive all blob operations
@@ -55,8 +55,6 @@ class BlobOperator
 	//! Aply operator to blob
 	virtual double operator()(Blob &blob) = 0;
 };
-
-typedef BlobOperator funcio_calculBlob;
 
 #ifdef BLOB_OBJECT_FACTORY
 /**
@@ -899,6 +897,6 @@ class BlobGetRelativeArea: public BlobOperator
 	double m_theoreticalArea;
 };
 
-CVBLOBS_END_NAMESPACE;
+CVBLOBS_END_NAMESPACE
 
 #endif // _CVBLOBS2_BLOBOPERATORS_H_

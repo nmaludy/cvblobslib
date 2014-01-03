@@ -5,7 +5,7 @@
 #include <cvblobs2/Blob.h>
 #include <cvblobs2/BlobOperators.h>
 
-CVBLOBS_BEGIN_NAMESPACE;
+CVBLOBS_BEGIN_NAMESPACE
 
 Blob::Blob()
     : mpStorage(NULL),
@@ -758,4 +758,4 @@ void Blob::joinBlob(Blob* pBlob)
 	mProperties.clear();
 }
 
-CVBLOBS_END_NAMESPACE;
+CVBLOBS_END_NAMESPACE

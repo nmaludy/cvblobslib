@@ -17,7 +17,7 @@
 #include <cvblobs2/BlobContour.h>
 #include <map>
 
-CVBLOBS_BEGIN_NAMESPACE;
+CVBLOBS_BEGIN_NAMESPACE
 
 class Blob
 {
@@ -205,6 +205,6 @@ inline void Blob::resetProperty(const std::string& propertyName)
   mProperties.erase(propertyName);
 }
 
-CVBLOBS_END_NAMESPACE;
+CVBLOBS_END_NAMESPACE
 
 #endif // _CVBLOBS_BLOB_H_
