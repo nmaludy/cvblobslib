@@ -19,8 +19,13 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}" )
 
 # verbose makefile
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Verbose" FORCE)
-# warn all and -fPIC for shared build
-set(CMAKE_CXX_FLAGS "-Wall -Werror -pedantic -ansi -fPIC -fno-strict-aliasing")
+# Compiler flags
+#  -Wall     : warn all
+#  -Werror   : turn all warnings into errors
+#  -pedantic : strict ISO C++ standards
+#  -ansi     : strict ansi standards
+#  -fno-strict-aliasing : no strict aliasing of pointers
+set(CMAKE_CXX_FLAGS "-Wall -Werror -pedantic -ansi -fno-strict-aliasing")
 
 ###########
 # Project #
@@ -53,7 +58,7 @@ file(GLOB HEADERS
      ${CMAKE_CURRENT_LIST_DIR}/src/cvblobs2/*.h)
 
 # define the GeographicJni library and specify whether it is shared or not.
-add_library(${CVBLOBS_LIBRARY_NAME} SHARED ${SOURCES} ${HEADERS})
+add_library(${CVBLOBS_LIBRARY_NAME} SHARED STATIC ${SOURCES} ${HEADERS})
 
 # set the library version so that the library will be named libX.so.MAJOR.MINOR
 # this will also create nice symlinks
@@ -61,11 +66,18 @@ set_target_properties(${CVBLOBS_LIBRARY_NAME} PROPERTIES
   VERSION   ${CVBLOBS_VERSION}
   SOVERSION ${CVBLOBS_MAJOR_VERSION})
 
-# create a sylink called libblob.so to links to libcvblobs.so
+# create a sylink called libblob.so that links to libcvblobs.so
 set (LIBBLOB_LINK_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}blob${CMAKE_SHARED_LIBRARY_SUFFIX})
 add_custom_command(TARGET ${CVBLOBS_LIBRARY_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SHARED_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX} ${LIBBLOB_LINK_NAME}
 )
+
+# create a sylink called libblob.a that links to libcvblobs.a
+set (LIBBLOB_LINK_NAME ${CMAKE_STATIC_LIBRARY_PREFIX}blob${CMAKE_STATIC_LIBRARY_SUFFIX})
+add_custom_command(TARGET ${CVBLOBS_LIBRARY_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_STATIC_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX} ${LIBBLOB_LINK_NAME}
+)
+
  
 ##################################
 # Find Packages and Dependencies #
