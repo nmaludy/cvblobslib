@@ -1,89 +1,81 @@
 #include <cvblobs2/BlobContour.h>
-#include <opencv/cxcore.h>
+
+#include <cvblobs2/ChainCode.h>
+#include <cvblobs2/SpatialMoments.h>
 
 CVBLOBS_BEGIN_NAMESPACE
 
 BlobContour::BlobContour()
+    : mContour(),
+      mStartPoint(-1, -1),
+      mContourPoints(),
+      mArea(-1),
+      mPerimeter(-1),
+      mMoments(),
+      mBoundingBox(-1, -1, -1, -1)
 {
-	mStartPoint.x = 0;
-	mStartPoint.y = 0;
-	mArea = -1;
-	mPerimeter = -1;
-	mpContourPoints = NULL;
 	mMoments.m00 = -1;
-	mpContour = NULL;
-	mpParentStorage = NULL;
 }
-BlobContour::BlobContour(CvPoint startPoint, CvMemStorage *storage )
+               
+BlobContour::BlobContour(const cv::Point& startPoint)
+    : mContour(),
+      mStartPoint(startPoint),
+      mContourPoints(),
+      mArea(-1),
+      mPerimeter(-1),
+      mMoments(),
+      mBoundingBox(-1, -1, -1, -1)
 {
-	mStartPoint.x = startPoint.x;
-	mStartPoint.y = startPoint.y;
-	mArea = -1;
-	mPerimeter = -1;
 	mMoments.m00 = -1;
-
-	mpParentStorage = storage;
-
-	mpContourPoints = NULL;
-
-	// contour sequence: must be compatible with opencv functions
-	mpContour = cvCreateSeq( CV_SEQ_ELTYPE_CODE | CV_SEQ_KIND_CURVE | CV_SEQ_FLAG_CLOSED,
-                           sizeof(CvContour),
-                           sizeof(t_chainCode),mpParentStorage);
-
 }
-
 
 //! Copy constructor
-BlobContour::BlobContour( BlobContour *source )
+BlobContour::BlobContour(BlobContour* pSource)
 {
-	if (source != NULL )
+	if (pSource != NULL)
 	{
-		*this = *source;
+		*this = *pSource;
 	}
 }
 
+BlobContour::BlobContour(const BlobContour& source)
+    : mContour(source.mContour),
+      mStartPoint(source.mStartPoint),
+      mContourPoints(source.mContourPoints),
+      mArea(source.mArea),
+      mPerimeter(source.mPerimeter),
+      mMoments(source.mMoments),
+      mBoundingBox(source.mBoundingBox)
+{}
+
 BlobContour::~BlobContour()
 {
-	// let parent blob deallocate all contour and contour point memory
-	mpContour = NULL;
-	mpContourPoints = NULL;
+  // not responsible for any memory
 }
 
-
 //! Copy operator
-BlobContour& BlobContour::operator=( const BlobContour &source )
+BlobContour& BlobContour::operator=(const BlobContour& source)
 {
-	if( this != &source )
-	{		
-		mStartPoint = source.mStartPoint;
-
-		mpParentStorage = source.mpParentStorage;
-		
-		if (mpContour)
-		{
-			cvClearSeq( mpContour );
-		}
-
-		if (source.mpContour)
-		{
-			mpContour =	cvCloneSeq( source.mpContour, mpParentStorage);
-		}
-		
-		if( source.mpContourPoints )
-		{
-			if( mpContourPoints )
-				cvClearSeq( mpContourPoints );
-			mpContourPoints = cvCloneSeq( source.mpContourPoints, mpParentStorage);
-		}
-
-		mArea = source.mArea;
-		mPerimeter = source.mArea;
-		mMoments = source.mMoments;
+	if (this != &source)
+	{
+    // copy-swap idiom
+    BlobContour tmp(source);
+    swap(tmp);
 	}
 	return *this;
 }
 
+//! swaps contents of this contour with other
+void BlobContour::swap(BlobContour& other)
+{
+  std::swap(mContour, other.mContour);
+  std::swap(mStartPoint, other.mStartPoint);
+  std::swap(mContourPoints, other.mContourPoints);
+  std::swap(mArea, other.mArea);
+  std::swap(mPerimeter, other.mPerimeter);
+  std::swap(mMoments, other.mMoments);
+  std::swap(mBoundingBox, other.mBoundingBox);
+}
 
 /**
    - FUNCIÓ: AddChainCode
@@ -98,24 +90,21 @@ BlobContour& BlobContour::operator=( const BlobContour &source )
    - DATA DE CREACIÓ: 2008/05/06
    - MODIFICACIÓ: Data. Autor. Descripció.
 */
-void BlobContour::addChainCode(t_chainCode chaincode)
+void BlobContour::addChainCode(ChainCodeType chaincode)
 {
-	cvSeqPush(mpContour, &chaincode);
+  mContour.push_back(chaincode);
 }
 
 //! Clears chain code contour and points
 void BlobContour::resetChainCode()
 {
-	if( mpContour )
-	{
-		cvClearSeq( mpContour );
-		mpContour = NULL;
-	}
-	if( mpContourPoints )
-	{
-		cvClearSeq( mpContourPoints );
-		mpContourPoints = NULL;
-	}
+	mContour.clear();
+  mContourPoints.clear();
+  mArea = -1;
+  mPerimeter = -1;
+  mMoments = cv::Moments();
+  mMoments.m00 = -1;
+  mBoundingBox = cv::Rect(-1, -1, -1, -1);
 }
 
 /**
@@ -140,11 +129,12 @@ double BlobContour::perimeter()
 		return mPerimeter;
 	}
 
-	if( isEmpty() )
+	if (isEmpty())
+  {
 		return 0;
+  }
 
-	mPerimeter = cvContourPerimeter( contourPoints() );
-
+  mPerimeter = cv::arcLength(contourPoints(), 1 );
 	return mPerimeter;
 }
 
@@ -170,93 +160,105 @@ double BlobContour::area()
 		return mArea;
 	}
 
-	if( isEmpty() )
+	if (isEmpty())
+  {
 		return 0;
+  }
 
-	mArea = fabs( cvContourArea( contourPoints() ));
-	
+	mArea = fabs( cv::contourArea(contourPoints()) );
 	return mArea;
 }
 
 //! Get contour moment (p,q up to MAX_CALCULATED_MOMENTS)
 double BlobContour::moment(int p, int q)
 {
-	// is a valid moment?
-	if ( p < 0 || q < 0 || p > MAX_MOMENTS_ORDER || q > MAX_MOMENTS_ORDER )
-	{
-		return -1;
-	}
-
-	if( isEmpty() )
+	if (isEmpty())
+  {
 		return 0;
-
+  }
+  
 	// it is calculated?
-	if( mMoments.m00 == -1)
+	if (mMoments.m00 == -1)
 	{
-		cvMoments( contourPoints(), &mMoments );
+    mMoments = cv::moments(contourPoints(), true);
 	}
 		
-	return cvGetSpatialMoment( &mMoments, p, q );
-
-	
+	return spatialMoment(mMoments, p, q);
 }
 
 //! Calculate contour points from crack codes
-t_PointList BlobContour::contourPoints()
+const PointContainer& BlobContour::contourPoints()
 {
 	// it is calculated?
-	if( mpContourPoints != NULL )
-		return mpContourPoints;
-
-	if ( mpContour == NULL || mpContour->total <= 0 )
+	if (!mContourPoints.empty())
+  {
+		return mContourPoints;
+  }
+  // mContourPoints is empty  
+	if (mContour.empty())
 	{
-		return NULL;
+		return mContourPoints;
 	}
 
-	CvSeq *tmpPoints;
-	CvSeqReader reader;
-	CvSeqWriter writer;
-	CvPoint actualPoint;
-	CvRect boundingBox;
+  cv::Point actual_point = mStartPoint;
+  cv::Rect::value_type min_value;
+  cv::Rect::value_type max_value;
+  if (std::numeric_limits<cv::Rect::value_type>::is_integer)
+  {
+    min_value = std::numeric_limits<cv::Rect::value_type>::min();
+    max_value = std::numeric_limits<cv::Rect::value_type>::max();
+  }
+  else
+  {
+    min_value = -std::numeric_limits<cv::Rect::value_type>::min();
+    max_value = std::numeric_limits<cv::Rect::value_type>::max();
+  }
+  
+	// also calculate bounding box of the contour
+  cv::Rect bounding_box(max_value,  // x
+                        max_value,  // y
+                        min_value,  // width
+                        min_value); // height
 
-	// if aproximation is different than simple extern perimeter will not work
-	tmpPoints = cvApproxChains( mpContour, mpParentStorage, CV_CHAIN_APPROX_NONE);
-
-
-	// apply an offset to contour points to recover real coordinates
-	
-	cvStartReadSeq( tmpPoints, &reader);
-
-	mpContourPoints = cvCreateSeq( tmpPoints->flags, tmpPoints->header_size, tmpPoints->elem_size, mpParentStorage );
-	cvStartAppendToSeq(mpContourPoints, &writer );
-
-	// also calculate bounding box of the contour to allow cvPointPolygonTest
-	// work correctly on the generated polygon
-	boundingBox.x = boundingBox.y = 10000;
-	boundingBox.width = boundingBox.height = 0;
-	
-	for( int i=0; i< tmpPoints->total; i++)
+  mContourPoints.reserve(mContour.size() + 1);
+  mContourPoints.push_back(mStartPoint);
+  
+  ChainCodeContainer::const_iterator end_iter = mContour.end();
+	for (ChainCodeContainer::const_iterator iter = mContour.begin();
+       iter != end_iter;
+       ++iter)
 	{
-		CV_READ_SEQ_ELEM( actualPoint, reader);
+    const ChainCode& chain_code = *iter;
+		actual_point = movePoint(actual_point, chain_code);
 
-		actualPoint.x += mStartPoint.x;
-		actualPoint.y += mStartPoint.y;
+		bounding_box.x = std::min( bounding_box.x, actual_point.x );
+		bounding_box.y = std::min( bounding_box.y, actual_point.y );
+		bounding_box.width  = std::max( bounding_box.width,  actual_point.x );
+		bounding_box.height = std::max( bounding_box.height, actual_point.y );
 
-		boundingBox.x = MIN( boundingBox.x, actualPoint.x );
-		boundingBox.y = MIN( boundingBox.y, actualPoint.y );
-		boundingBox.width = MAX( boundingBox.width, actualPoint.x );
-		boundingBox.height = MAX( boundingBox.height, actualPoint.y );
-		
-		CV_WRITE_SEQ_ELEM( actualPoint, writer );
+    mContourPoints.push_back(actual_point);
 	}
-	cvEndWriteSeq( &writer );
-	cvClearSeq( tmpPoints );
+
+  bounding_box.width  -= bounding_box.x + 1;
+  bounding_box.height -= bounding_box.y + 1;
 
 	// assign calculated bounding box
-	((CvContour*)mpContourPoints)->rect = boundingBox;
+	mBoundingBox = bounding_box;
 
+	return mContourPoints;
+}
 
-	return mpContourPoints;
+const cv::Rect& BlobContour::boundingBox()
+{
+  // is it already calculated?
+  if (mBoundingBox.width != 0 &&
+      mBoundingBox.height != 0)
+  {
+		return mBoundingBox;
+  }
+  // computes bounding box
+  contourPoints();
+  return mBoundingBox;
 }
 
 CVBLOBS_END_NAMESPACE

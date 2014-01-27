@@ -7,24 +7,15 @@ AUTOR: Inspecta S.L.
 MODIFICACIONS (Modificació, Autor, Data):
  
 **************************************************************************/
-#if _MSC_VER > 1000
-  // deactivate warning (identifier was truncated to '255' characters in the
-  // debug information) is a problem of msvc6.5
-  #pragma warning(disable: 4786)
-#endif // _MSC_VER > 1000
-
 #include <cvblobs2/BlobResult.h>
 
 #include <limits.h>
 #include <stdio.h>
 #include <functional>
 #include <algorithm>
+#include <cvblobs2/counted_ptr.h>
 
-//! Show errors functions: only works for windows releases
-#ifdef _SHOW_ERRORS
-	#include <afx.h>			//suport per a CStrings
-	#include <afxwin.h>			//suport per a AfxMessageBox
-#endif
+#include <cvblobs2/BlobOperators.h>
 
 CVBLOBS_BEGIN_NAMESPACE
 
@@ -100,6 +91,7 @@ BlobResult::BlobResult()
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
+// @todo
 // BlobResult::BlobResult(IplImage *source, IplImage *mask, uchar backgroundColor )
 // {
 // 	bool success;
@@ -210,6 +202,34 @@ BlobResult& BlobResult::operator=(const BlobResult& source)
 	return *this;
 }
 
+// it's OK for result to be lhs or  rhs
+template <typename T>
+void concatVectors(std::vector<T>& result,
+                   const std::vector<T>& lhs,
+                   const std::vector<T>& rhs)
+{
+  if (&result == &lhs)
+  {
+    // allocate space for result and rhs
+    result.reserve(result.size() + rhs.size());
+    result.insert(result.end(), rhs.begin(), rhs.end());
+  }
+  else if (&result == &rhs)
+  {
+    // allocate space for result and lhs
+    result.reserve(result.size() + lhs.size());
+    result.insert(result.end(), lhs.begin(), lhs.end());
+  }
+  else
+  {
+    // allocate space for result, lhs, and rhs
+    result.reserve(result.size() + lhs.size() + rhs.size());
+    // append lhs first
+    result.insert(result.end(), lhs.begin(), lhs.end());
+    // append rhs second
+    result.insert(result.end(), rhs.begin(), rhs.end());
+  }
+}
 
 /**
 - FUNCIÓ: operador +
@@ -238,28 +258,30 @@ BlobResult& BlobResult::operator=(const BlobResult& source)
 */
 BlobResult BlobResult::operator+(const BlobResult& source) const
 {
-	// create a copy of souce's blobs as the result
-	BlobResult result(source);
-  // add this' blobs to result
-	result += *this;
+  // Normally you would implement + in terms of += but in this case it is very
+  // inefficient to do that because two copies of the mBlobs vector would be
+  // made. Instead we make an empty BlobResult and add the blobs from this
+  // and source into it at the same time. This requires only one allocation
+  // resulting in a more efficient implementation.
+	BlobResult result;
+  concatVectors(result.mBlobs, source.mBlobs, mBlobs);
 	return result;
 }
 
 BlobResult& BlobResult::operator+=(const BlobResult& source)
 {
-  // use copy-swap idiom here to be safe in the face of allocation exceptions
-  // create a copy of source's blobs
-  Blob_vector tmp_blobs = source.mBlobs;
-
-	// allocate space for blobs from this 
-  tmp_blobs.resize(tmp_blobs.size() + mBlobs.size());
-
-	// add blobs from this to blobs from source
-  tmp_blobs.insert(tmp_blobs.end(), mBlobs.begin(), mBlobs.end());
-  
-  // swap the containers so that mBlobs can be safely updated 
-  std::swap(mBlobs, tmp_blobs);
-	return *this;
+  // += is only needed if source has blobs to copy over otherwise we're making
+  // an uncessary copy of our mBlobs for no reason.
+  if (!source.mBlobs.empty())
+  {
+    // use copy-swap idiom here to be safe in the face of allocation exceptions
+    BlobContainer tmp_blobs;
+    concatVectors(tmp_blobs, source.mBlobs, mBlobs);
+    
+    // swap the containers so that mBlobs can be safely updated 
+    std::swap(mBlobs, tmp_blobs);
+  }
+  return *this;
 }
 
 void BlobResult::swap(BlobResult& other)
@@ -283,7 +305,7 @@ void BlobResult::swap(BlobResult& other)
 - DATA DE CREACIÓ: 2006/03/01
 - MODIFICACIÓ: Data. Autor. Descripció.
 */
-void BlobResult::addBlob(BlobPtr blob)
+void BlobResult::addBlob(BlobPtrType blob)
 {
 	mBlobs.push_back(blob);
 }
@@ -326,7 +348,7 @@ std::vector<double> BlobResult::result(BlobOperator* pOperator) const
   result.reserve(numBlobs());
 
   // evaluate pOperator for each blob
-	for (Blob_vector::const_iterator it = mBlobs.begin();
+	for (BlobContainer::const_iterator it = mBlobs.begin();
        it != mBlobs.end();
        ++it)
   {
@@ -364,7 +386,7 @@ std::vector<double> BlobResult::result(BlobOperator* pOperator) const
 double BlobResult::number(int blobIndex, BlobOperator* pOperator) const
 {
   // use range checked at() to be safe
-  BlobPtr p_blob = mBlobs.at(blobIndex);
+  BlobPtrType p_blob = mBlobs.at(blobIndex);
 	return pOperator->GetOperatorResult(*p_blob);
 }
 
@@ -423,9 +445,9 @@ double BlobResult::number(int blobIndex, BlobOperator* pOperator) const
 - MODIFICATION: Date. Author. Description.
 */
 void BlobResult::filter(BlobResult& dst,
-                        int filterAction, 
+                        FilterAction filterAction, 
                         BlobOperator* pOperator,
-                        int condition, 
+                        FilterCondition condition, 
                         double lowLimit,
                         double highLimit /*=0*/)
 {
@@ -450,35 +472,35 @@ void BlobResult::filter(BlobResult& dst,
     result = blob_results[i];
 		switch (condition)
 		{
-			case B_EQUAL:
+			case CONDITION_EQUAL:
 				b_result_passed = (result == lowLimit);
 				break;
-			case B_NOT_EQUAL:
+			case CONDITION_NOT_EQUAL:
 				b_result_passed = (result != lowLimit);
 				break;
-			case B_GREATER:
+			case CONDITION_GREATER:
 				b_result_passed = (result > lowLimit);
 				break;
-			case B_LESS:
+			case CONDITION_LESS:
 				b_result_passed = (result < lowLimit);
 				break;
-			case B_GREATER_OR_EQUAL:
+			case CONDITION_GREATER_OR_EQUAL:
 				b_result_passed = (result >= lowLimit);
 				break;
-			case B_LESS_OR_EQUAL:
+			case CONDITION_LESS_OR_EQUAL:
 				b_result_passed = (result <= lowLimit);
 				break;
-			case B_INSIDE:
+			case CONDITION_INSIDE:
 				b_result_passed = (result >= lowLimit) && (result <= highLimit); 
 				break;
-			case B_OUTSIDE:
+			case CONDITION_OUTSIDE:
 				b_result_passed = (result < lowLimit) || (result > highLimit); 
 				break;
 		} // end switch condition
 		
 		// blob is selected?
-		b_selected_blob = ( (b_result_passed && filterAction == B_INCLUDE ) || 
-                        (!b_result_passed && filterAction == B_EXCLUDE ) );
+		b_selected_blob = ( (b_result_passed && filterAction == ACTION_INCLUDE ) || 
+                        (!b_result_passed && filterAction == ACTION_EXCLUDE ) );
 
 		// add to dst if not inline operation
     // (for inline operation we don't have to do anything)
@@ -690,7 +712,7 @@ void BlobResult::printBlobs(char* pFileName) const
 */
 void BlobResult::removeProperty(const std::string& propertyName)
 {
-  for (Blob_vector::iterator iter = mBlobs.begin();
+  for (BlobContainer::iterator iter = mBlobs.begin();
        iter != mBlobs.end();
        ++iter)
   {

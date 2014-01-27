@@ -8,74 +8,129 @@
 #ifndef _CVBLOBS2_COUNTED_PTR_H_
 #define _CVBLOBS2_COUNTED_PTR_H_
 
-#define NO_MEMBER_TEMPLATES
+#include <cvblobs2/CvBlobsDefs.h>
+#include <cstddef> // for NULL
+
+// #define NO_MEMBER_TEMPLATES
 /* For ANSI-challenged compilers, you may want to #define
  * NO_MEMBER_TEMPLATES or explicit */
 
-template <class X> class counted_ptr
-{
-public:
-    typedef X element_type;
+CVBLOBS_BEGIN_NAMESPACE
 
-    explicit counted_ptr(X* p = 0) // allocate a new counter
-        : itsCounter(0) {if (p) itsCounter = new counter(p);}
-    ~counted_ptr()
-        {release();}
-    counted_ptr(const counted_ptr& r) throw()
-        {acquire(r.itsCounter);}
-    counted_ptr& operator=(const counted_ptr& r)
+template <class X>
+class counted_ptr
+{
+ public:
+  typedef X element_type;
+
+  explicit counted_ptr(X* pPtr = NULL) // allocate a new counter
+      : mpCounter(NULL)
+  {
+    if (pPtr != NULL)
     {
-        if (this != &r) {
-            release();
-            acquire(r.itsCounter);
-        }
-        return *this;
+      mpCounter = new Counter(pPtr);
     }
+  }
+  
+  ~counted_ptr()
+  {
+    release();
+  }
+  
+  counted_ptr(const counted_ptr& other) throw()
+  {
+    acquire(other.mpCounter);
+  }
+  
+  counted_ptr& operator=(const counted_ptr& rhs)
+  {
+    if (this != &rhs)
+    {
+      release();
+      acquire(rhs.mpCounter);
+    }
+    return *this;
+  }
 
 #ifndef NO_MEMBER_TEMPLATES
-    template <class Y> friend class counted_ptr<Y>;
-    template <class Y> counted_ptr(const counted_ptr<Y>& r) throw()
-        {acquire(r.itsCounter);}
-    template <class Y> counted_ptr& operator=(const counted_ptr<Y>& r)
+  template <class Y>
+  counted_ptr(const counted_ptr<Y>& other) throw()
+  {
+    acquire(other.mpCounter);
+  }
+  
+  template <class Y>
+  counted_ptr& operator=(const counted_ptr<Y>& rhs)
+  {
+    if (this != &rhs)
     {
-        if (this != &r) {
-            release();
-            acquire(r.itsCounter);
-        }
-        return *this;
+      release();
+      acquire(rhs.mpCounter);
     }
+    return *this;
+  }
 #endif // NO_MEMBER_TEMPLATES
 
-    X& operator*()  const throw()   {return *itsCounter->ptr;}
-    X* operator->() const throw()   {return itsCounter->ptr;}
-    X* get()        const throw()   {return itsCounter ? itsCounter->ptr : 0;}
-    bool unique()   const throw()
-        {return (itsCounter ? itsCounter->count == 1 : true);}
+  inline X& operator*() const throw()
+  {
+    return *mpCounter->mpPtr;
+  }
 
-private:
+  inline X* operator->() const throw()
+  {
+    return mpCounter->mpPtr;
+  }
+  
+  inline X* get() const throw()
+  {
+    return (mpCounter != NULL) ? mpCounter->mpPtr : NULL;
+  }
+  
+  inline bool unique() const throw()
+  {
+    return ((mpCounter != NULL) ? mpCounter->mCount == 1 : true);
+  }
 
-    struct counter {
-        counter(X* p = 0, unsigned c = 1) : ptr(p), count(c) {}
-        X*          ptr;
-        unsigned    count;
-    }* itsCounter;
+ private:
 
-    void acquire(counter* c) throw()
-    { // increment the count
-        itsCounter = c;
-        if (c) ++c->count;
+  struct Counter
+  {
+    Counter(X* pPtr = NULL, unsigned count = 1)
+        : mpPtr(pPtr),
+          mCount(count)
+    {}
+    
+    X*           mpPtr;
+    unsigned int mCount;
+  };
+
+  void acquire(Counter* pCounter) throw()
+  {
+    // increment the count
+    mpCounter = pCounter;
+    if (pCounter != NULL)
+    {
+      ++(pCounter->mCount);
     }
+  }
 
-    void release()
-    { // decrement the count, delete if it is 0
-        if (itsCounter) {
-            if (--itsCounter->count == 0) {
-                delete itsCounter->ptr;
-                delete itsCounter;
-            }
-            itsCounter = 0;
-        }
+  void release()
+  {
+    // decrement the count, delete if it is 0
+    if (mpCounter != NULL)
+    {
+      if (--(mpCounter->mCount) == 0)
+      {
+        delete mpCounter->mpPtr;
+        delete mpCounter;
+      }
+      mpCounter = NULL;
     }
+  }
+
+  Counter* mpCounter;
 };
+
+CVBLOBS_END_NAMESPACE
 
 #endif // _CVBLOBS2_COUNTED_PTR_H_

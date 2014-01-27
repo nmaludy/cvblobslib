@@ -9,13 +9,9 @@
 #ifndef _CVBLOBS2_BLOBCONTOUR_H_
 #define _CVBLOBS2_BLOBCONTOUR_H_
 
-#include <list>
-#include <opencv/cv.h>
-#include <opencv/cxcore.h>
 #include <cvblobs2/CvBlobsFwd.h>
-
-//! Max order of calculated moments
-#define MAX_MOMENTS_ORDER		3
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 CVBLOBS_BEGIN_NAMESPACE
 
@@ -27,28 +23,36 @@ class BlobContour
  public:
 	//! Constructors
 	BlobContour();
-	BlobContour(CvPoint startPoint, CvMemStorage* pStorage);
+	BlobContour(const cv::Point& startPoint);
 	//! Copy constructor
+  BlobContour(const BlobContour& source);
 	BlobContour(BlobContour* pSource);
 
 	~BlobContour();
 	//! Assigment operator
 	BlobContour& operator=(const BlobContour& source);
 
+  //! swaps contents of this contour with other
+  void swap(BlobContour& other);
+
 	//! Add chain code to contour
-	void addChainCode(t_chainCode code);
+	void addChainCode(ChainCodeType code);
 
 	//! Return freeman chain coded contour
-	t_chainCodeList chainCode() const;
+  const ChainCodeContainer& chainCode() const;
 
+  //! returns true if this contour is empty
 	inline bool isEmpty() const;
 
 	//! Return all contour points
-	t_PointList contourPoints();
+  const PointContainer& contourPoints();
 
+  //! Returns the bounding box rectangle of this contour
+  const cv::Rect& boundingBox();
+  
  protected:	
 
-  inline const CvPoint& startPoint() const;
+  inline const cv::Point& startPoint() const;
 
 	//! Clears chain code contour
 	void resetChainCode();
@@ -61,41 +65,49 @@ class BlobContour
 	double moment(int p, int q);
 
 	//! Crack code list
-	t_chainCodeList mpContour; 	
+	ChainCodeContainer mContour;
 
  private:
 	//! Starting point of the contour
-	CvPoint mStartPoint;
+  cv::Point mStartPoint;
 	//! All points from the contour
-	t_PointList mpContourPoints;
+	PointContainer mContourPoints;
 
 	//! Computed area from contour
 	double mArea;
 	//! Computed perimeter from contour
 	double mPerimeter;
 	//! Computed moments from contour
-	CvMoments mMoments;
+  cv::Moments mMoments;
 
-	//! Pointer to storage
-	CvMemStorage* mpParentStorage;
+  //! bounding box
+  cv::Rect mBoundingBox;
 };
 
-inline t_chainCodeList BlobContour::chainCode() const
+inline const ChainCodeContainer& BlobContour::chainCode() const
 {
-  return mpContour;
+  return mContour;
 }
 
 inline bool BlobContour::isEmpty() const
 {
-  return mpContour == NULL || mpContour->total == 0;
+  return mContour.empty();
 }
 
-inline const CvPoint& BlobContour::startPoint() const
+inline const cv::Point& BlobContour::startPoint() const
 {
   return mStartPoint;
 }
 
 CVBLOBS_END_NAMESPACE
+
+namespace std {
+template<>
+void swap(cvblobs::BlobContour& lhs, cvblobs::BlobContour& rhs)
+{
+  lhs.swap(rhs);
+}
+} // namespace std
 
 #endif // _CVBLOBS_BLOBCONTOUR_H_
 

@@ -25,7 +25,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Verbose" FORCE)
 #  -pedantic : strict ISO C++ standards
 #  -ansi     : strict ansi standards
 #  -fno-strict-aliasing : no strict aliasing of pointers
-set(CMAKE_CXX_FLAGS "-Wall -Werror -pedantic -ansi -fno-strict-aliasing")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -pedantic -ansi -fno-strict-aliasing")
 
 ###########
 # Project #

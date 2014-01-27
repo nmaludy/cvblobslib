@@ -8,121 +8,83 @@
 CVBLOBS_BEGIN_NAMESPACE
 
 Blob::Blob()
-    : mpStorage(NULL),
-      mExternalContour(),
+    : mExternalContour(),
       mInternalContours(),
       mProperties(),
       mId(0),
-      mBoundingBox(cvRect(-1, -1, -1, -1)),
-      mOriginalImageSize(cvSize(-1, -1))
+      mBoundingBox(-1, -1, -1, -1),
+      mOriginalImageSize(-1, -1)
 {}
 
-Blob::Blob(t_labelType id, CvPoint startPoint, CvSize originalImageSize)
-    : mpStorage(cvCreateMemStorage()),
-      mExternalContour(startPoint, mpStorage),
+Blob::Blob(LabelType id,
+           const cv::Point& startPoint,
+           const cv::Size& originalImageSize)
+    : mExternalContour(startPoint),
       mInternalContours(),
       mProperties(),
       mId(id),
-      mBoundingBox(cvRect(-1, -1, -1, -1)),
+      mBoundingBox(-1, -1, -1, -1),
       mOriginalImageSize(originalImageSize)
 {}
 
-Blob::Blob(const Blob& src)
-{
-	mpStorage = NULL;
-	*this = src;
-}
+Blob::Blob(const Blob& source)
+    : mExternalContour(source.mExternalContour),
+      mInternalContours(source.mInternalContours),
+      mProperties(source.mProperties),
+      mId(source.mId),
+      mBoundingBox(source.mBoundingBox),
+      mOriginalImageSize(source.mOriginalImageSize)
+{}
 
-Blob::Blob(const Blob* pSrc)
+Blob::Blob(Blob* pSource)
 {
-	if (pSrc != NULL &&
-      this != pSrc)
+	if (pSource != NULL)
 	{
-		mpStorage = NULL;
-		*this = *pSrc;
+		*this = *pSource;
 	}
-}
-
-Blob& Blob::operator=(const Blob &src)
-{
-	if (this != &src)
-	{
-		mId = src.mId;
-		mOriginalImageSize = src.mOriginalImageSize;
-		mBoundingBox = src.mBoundingBox;
-
-		// copy all blob properties
-    mProperties = src.mProperties;
-
-		// clear all current blob contours
-		clearContours();
-		
-		if (mpStorage != NULL)
-    {
-			cvReleaseMemStorage(&mpStorage);
-    }
-
-		mpStorage = cvCreateMemStorage();
-
-		mExternalContour = BlobContour(src.mExternalContour.startPoint(),
-                                   mpStorage);
-		if (src.mExternalContour.mpContour != NULL)
-    {
-			mExternalContour.mpContour = cvCloneSeq(src.mExternalContour.mpContour,
-                                              mpStorage);
-    }
-		mInternalContours.clear();
-
-		// copy all internal contours
-		if (!src.mInternalContours.empty())
-		{
-			mInternalContours = t_contourList( src.mInternalContours.size() );
-			t_contourList::const_iterator itSrc;
-			t_contourList::iterator it;
-
-			itSrc = src.mInternalContours.begin();
-			it = mInternalContours.begin();
-
-			while (itSrc != src.mInternalContours.end())
-			{
-				*it = BlobContour((*itSrc).startPoint(), mpStorage);
-				if ((*itSrc).mpContour != NULL)
-        {
-					(*it).mpContour = cvCloneSeq( (*itSrc).mpContour, mpStorage );
-        }
-
-				++it;
-				++itSrc;
-			}
-		}
-	}
-
-	return *this;
 }
 
 Blob::~Blob()
 {
-	clearContours();
+  // not responsible for any memory
+}
 
-	mProperties.clear();
-	
-	if (mpStorage != NULL)
-  {
-		cvReleaseMemStorage( &mpStorage );
-  }
+Blob& Blob::operator=(const Blob& source)
+{
+	if (this != &source)
+	{
+    // copy-swap idiom
+    Blob tmp(source);
+    swap(tmp);
+	}
+	return *this;
+}
+
+//! swaps contents of this blob with other
+void Blob::swap(Blob& other)
+{
+  std::swap(mExternalContour,   other.mExternalContour);
+  std::swap(mInternalContours,  other.mInternalContours);
+  std::swap(mProperties,        other.mProperties);
+  std::swap(mId,                other.mId);
+  std::swap(mBoundingBox,       other.mBoundingBox);
+  std::swap(mOriginalImageSize, other.mOriginalImageSize);
 }
 
 void Blob::clearContours()
 {
-	for (t_contourList::iterator it = mInternalContours.begin();
-       it != mInternalContours.end();
-       ++it)
+  ContourContainer::iterator end_iter = mInternalContours.end();
+	for (ContourContainer::iterator iter = mInternalContours.begin();
+       iter != end_iter;
+       ++iter)
 	{
-		(*it).resetChainCode();
+		iter->resetChainCode();
 	}	
 	mInternalContours.clear();
 	mExternalContour.resetChainCode();
-		
+  
+  mProperties.clear();
+  mBoundingBox = cv::Rect(-1, -1, -1, -1);
 }
 void Blob::addInternalContour(const BlobContour& newContour)
 {
@@ -133,7 +95,7 @@ void Blob::addInternalContour(const BlobContour& newContour)
 //! Shows if the blob has associated information
 bool Blob::isEmpty()
 {
-	return externalContour()->mpContour == NULL;
+	return externalContour()->isEmpty();
 }
 
 /**
@@ -155,11 +117,12 @@ double Blob::area()
 	double area = mExternalContour.area();
 
   // minus all of the internal contours
-	for (t_contourList::iterator it_contour = mInternalContours.begin();
-       it_contour != mInternalContours.end();
-       ++it_contour)
+  ContourContainer::iterator end_iter = mInternalContours.end();
+	for (ContourContainer::iterator iter = mInternalContours.begin();
+       iter != end_iter;
+       ++iter)
 	{
-		area -= (*it_contour).area();
+		area -= iter->area();
 	}
 	return area;
 }
@@ -183,11 +146,12 @@ double Blob::perimeter()
 	double perimeter = mExternalContour.perimeter();
 
   // plus perimeter of all internal contours
-	for (t_contourList::iterator it_contour = mInternalContours.begin();
-       it_contour != mInternalContours.end();
-       ++it_contour)
+  ContourContainer::iterator end_iter = mInternalContours.end();
+	for (ContourContainer::iterator iter = mInternalContours.begin();
+       iter != end_iter;
+       ++iter)
 	{
-		perimeter += (*it_contour).perimeter();
+		perimeter += iter->perimeter();
 	}
 	return perimeter;
 }
@@ -247,39 +211,33 @@ double Blob::externPerimeter(IplImage* pMaskImage,
                              bool bYBorderTop    /* = true */,
                              bool bYBorderBottom /* = true */)
 {
-	t_PointList p_extern_contour;
-  t_PointList p_external_points;
-	CvSeqReader reader;
-	CvSeqWriter writer;
-	CvPoint actual_point;
-  CvPoint previous_point;
+  cv::Point previous_point;
 	bool find = false;
 	int delta = 0;
 	double extern_perimeter = 0.0;
 	
 	// get contour pixels
-	p_extern_contour = mExternalContour.contourPoints();
+	const PointContainer& extern_contour = mExternalContour.contourPoints();
 
 	// there are contour pixels?
-	if (p_extern_contour == NULL)
+	if (extern_contour.empty())
 	{
 		return 0;
 	}
 
-	cvStartReadSeq(p_extern_contour, &reader);
-
 	// create a sequence with the external points of the blob
-	p_external_points = cvCreateSeq(p_extern_contour->flags,
-                                  p_extern_contour->header_size,
-                                  p_extern_contour->elem_size, 
-                                  mpStorage);
-	cvStartAppendToSeq( p_external_points, &writer );
+  // this must be a std::vector for use with cv::arcLength
+  std::vector<cv::Point> external_points;
+  external_points.reserve(extern_contour.size());
 	previous_point.x = -1;
 
 	// which contour pixels touch border?
-	for (int j = 0; j < p_extern_contour->total; ++j)
+  PointContainer::const_iterator end_iter = extern_contour.end();
+	for (PointContainer::const_iterator iter = extern_contour.begin();
+       iter != end_iter;
+       ++iter)
 	{
-		CV_READ_SEQ_ELEM( actual_point, reader);
+		const cv::Point& actual_point = *iter;
 
 		find = false;
 
@@ -308,7 +266,7 @@ double Blob::externPerimeter(IplImage* pMaskImage,
 						find = true;
 						break;
 					}						
-				}
+				} // end for each pixel
 				
 				if (!find)
 				{
@@ -322,8 +280,8 @@ double Blob::externPerimeter(IplImage* pMaskImage,
 							find = true;
 							break;
 						}
-					}
-				}
+					} // end for each pixel
+				} // end if (!find)
 			
 				if (!find)
 				{
@@ -337,10 +295,10 @@ double Blob::externPerimeter(IplImage* pMaskImage,
 							find = true;
 							break;
 						}
-					}
-				}
-			}
-		}
+					} // end for each pixel
+				} // end if (!find)
+			} // end if pMaskImage != NULL
+		} // end if pixel touching border
 
 		if (find)
 		{
@@ -353,25 +311,24 @@ double Blob::externPerimeter(IplImage* pMaskImage,
 			// calculate separately each external contour segment 
 			if (delta > 2)
 			{
-				cvEndWriteSeq( &writer );
-				extern_perimeter += cvArcLength( p_external_points, CV_WHOLE_SEQ, 0 );
+        // false == not closed
+				extern_perimeter += cv::arcLength(external_points, false);
 				
-				cvClearSeq( p_external_points );
-				cvStartAppendToSeq( p_external_points, &writer );
+				external_points.clear();
 				delta = 0;
 				previous_point.x = -1;
 			}
 
-			CV_WRITE_SEQ_ELEM( actual_point, writer );
+			external_points.push_back(actual_point);
 			previous_point = actual_point;
-		}
-	}
+		} // end if (find)
+	} // end for each point in extern_contour
 
-	cvEndWriteSeq( &writer );
-	cvSeqSort(p_external_points, cmp_func, 0);
-	extern_perimeter += cvArcLength( p_external_points, CV_WHOLE_SEQ, 0 );
-
-	cvClearSeq( p_external_points );
+  std::sort(external_points.begin(), external_points.end(),
+            TopToBottomLeftToRightCmp());
+  
+  // false == not closed
+	extern_perimeter += cv::arcLength(external_points, false);
 
 	// divide by two because external points have one side inside the blob and
   // the other outside Perimeter of external points counts both sides, so it
@@ -388,11 +345,12 @@ double Blob::moment(int p, int q)
 	double moment = mExternalContour.moment(p,q);
 
   // minus all of the internal moments
-	for (t_contourList::iterator it_contour = mInternalContours.begin();
-       it_contour != mInternalContours.end();
-       ++it_contour)
+	ContourContainer::iterator end_iter = mInternalContours.end();
+	for (ContourContainer::iterator iter = mInternalContours.begin();
+       iter != end_iter;
+       ++iter)
 	{
-		moment -= (*it_contour).moment(p,q);
+		moment -= iter->moment(p,q);
 	}
 	return moment;
 }
@@ -410,91 +368,91 @@ double Blob::moment(int p, int q)
    - DATA DE CREACIÓ: 2008/05/06
    - MODIFICACIÓ: Data. Autor. Descripció.
 */
-double Blob::mean(IplImage* pImage)
+double Blob::mean(cv::Mat& image)
 {
 	double mean   = 0.0;
   double stddev = 0.0;
 	
 	// call mean calculation (where also standard deviation is calculated)
-	meanAndStdDev(pImage, mean, stddev);
+	meanAndStdDev(image, mean, stddev);
 
 	return mean;
 }
 
-double Blob::stdDev(IplImage* pImage)
+double Blob::stdDev(cv::Mat& image)
 {
 	double mean   = 0.0;
   double stddev = 0.0;
 	
 	// call mean calculation (where also standard deviation is calculated)
-	meanAndStdDev(pImage, mean, stddev);
+	meanAndStdDev(image, mean, stddev);
 
 	return stddev;
 }
 
 //! Calculates mean and std deviation of blob in input image
-void Blob::meanAndStdDev(IplImage* pImage, double& mean, double& stddev)
+void Blob::meanAndStdDev(cv::Mat& image, double& mean, double& stddev)
 {
-	IplImage* p_mask = NULL;
-	CvScalar meanscalar;
-  CvScalar stdscalar;
-	CvPoint offset;
-
-	// Create a mask with same size as blob bounding box
+ 	// Create a mask with same size as blob bounding box
 	boundingBox();
 
 	if (mBoundingBox.height <= 0 ||
       mBoundingBox.width <= 0 ||
-      !CV_IS_IMAGE( pImage ) ||
-      mBoundingBox.height > pImage->height ||
-      mBoundingBox.width > pImage->width)
+      image.empty() ||
+      mBoundingBox.height > image.size().height ||
+      mBoundingBox.width > image.size().width)
 	{
 		mean = 0.0;
 		stddev = 0.0;
 		return;
 	}
 
+  cv::Point offset;
+
 	// apply ROI and mask to input image to compute mean gray and standard deviation
-	p_mask = cvCreateImage( cvSize(mBoundingBox.width, mBoundingBox.height),
-                          IPL_DEPTH_8U, 1);
-	cvSetZero(p_mask);
+  cv::Mat mask = cv::Mat::zeros(mBoundingBox.size(), CV_8UC1);
 
 	offset.x = -mBoundingBox.x;
 	offset.y = -mBoundingBox.y;
 
 	// draw contours on mask
-	cvDrawContours( p_mask,
-                  mExternalContour.contourPoints(),
-                  CV_RGB(255,255,255),
-                  CV_RGB(255,255,255),
-                  0,
-                  CV_FILLED,
-                  8,
-                  offset );
+  cv::drawContours(mask,
+                   mExternalContour.contourPoints(),
+                   -1, // draw all contours
+                   cv::Scalar(255, 255, 255), // fill color
+                   CV_FILLED,     // thickness
+                   8,             // line type
+                   cv::noArray(), // heirarchy
+                   0,             // draw only the specified contour
+                   offset);       // offset to shift each point
 
 	// draw internal contours
-	for (t_contourList::iterator it = mInternalContours.begin();
-       it != mInternalContours.end();
-       ++it)
+  ContourContainer::iterator end_iter = mInternalContours.end();
+	for (ContourContainer::iterator iter = mInternalContours.begin();
+       iter != end_iter;
+       ++iter)
 	{
-		cvDrawContours( p_mask,
-                    (*it).contourPoints(),
-                    CV_RGB(0, 0, 0),
-                    CV_RGB(0, 0, 0),
-                    0,
-                    CV_FILLED,
-                    8,
-                    offset );
+    const PointContainer& contour_points = iter->contourPoints();
+    cv::drawContours(mask,
+                     contour_points,
+                     -1, // draw all contours
+                     cv::Scalar(0, 0, 0), // fill color
+                     CV_FILLED,     // thickness
+                     8,             // line type
+                     cv::noArray(), // heirarchy
+                     0,             // draw only the specified contour
+                     offset);       // offset to shift each point
 	}
 
-	cvSetImageROI( pImage, mBoundingBox );
-	cvAvgSdv( pImage, &meanscalar, &stdscalar, p_mask );
+  // extracts ROI from image
+  cv::Mat roi = image(mBoundingBox);
+  
+  cv::Scalar meanscalar;
+  cv::Scalar stdscalar;
+  cv::meanStdDev(roi, meanscalar, stdscalar, mask);
 	
-	mean   = meanscalar.val[0];
-	stddev = stdscalar.val[0];
-
-	cvReleaseImage( &p_mask );
-	cvResetImageROI( pImage );
+	mean   = meanscalar[0];
+	stddev = stdscalar[0];
 }
 
 /**
@@ -510,7 +468,7 @@ void Blob::meanAndStdDev(IplImage* pImage, double& mean, double& stddev)
    - DATA DE CREACIÓ: 2008/05/06
    - MODIFICACIÓ: Data. Autor. Descripció.
 */
-CvRect Blob::boundingBox()
+const cv::Rect& Blob::boundingBox()
 {
 	// it is calculated?
   /*	if( m_boundingBox.width != -1 )
@@ -520,13 +478,10 @@ CvRect Blob::boundingBox()
   */
   
 	// get contour pixels
-	t_PointList extern_contour = mExternalContour.contourPoints();
-  
-	CvSeqReader reader;
-	CvPoint actual_point;	
+	const PointContainer& extern_contour = mExternalContour.contourPoints();
 	
 	// it is an empty blob?
-	if (extern_contour == NULL)
+	if (extern_contour.empty())
 	{
 		mBoundingBox.x = 0;
 		mBoundingBox.y = 0;
@@ -536,30 +491,9 @@ CvRect Blob::boundingBox()
 		return mBoundingBox;
 	}
 
-	cvStartReadSeq( extern_contour, &reader);
-
-	mBoundingBox.x = mOriginalImageSize.width;
-	mBoundingBox.y = mOriginalImageSize.height;
-	mBoundingBox.width  = 0;
-	mBoundingBox.height = 0;
-
-	for (int i = 0; i < extern_contour->total; ++i)
-	{
-		CV_READ_SEQ_ELEM( actual_point, reader);
-
-		mBoundingBox.x = MIN( actual_point.x, mBoundingBox.x );
-		mBoundingBox.y = MIN( actual_point.y, mBoundingBox.y );
-		
-		mBoundingBox.width  = MAX( actual_point.x, mBoundingBox.width );
-		mBoundingBox.height = MAX( actual_point.y, mBoundingBox.height );
-	}
-
-	//mBoundingBox.x = max( mBoundingBox.x , 0 );
-	//mBoundingBox.y = max( mBoundingBox.y , 0 );
-
-	mBoundingBox.width  -= mBoundingBox.x + 1;
-	mBoundingBox.height -= mBoundingBox.y + 1;
-	
+  // @todo investigate if we can just return this for all calls
+  // specifically why the above sets to 0's instead of -1 in other places
+	mBoundingBox = mExternalContour.boundingBox();
 	return mBoundingBox;
 }
 
@@ -577,9 +511,9 @@ CvRect Blob::boundingBox()
    - MODIFICACIÓ: Data. Autor. Descripció.
    - NOTA: Calculation is made using second order moment aproximation
 */
-CvBox2D Blob::ellipse()
+cv::RotatedRect Blob::ellipse()
 {
-	CvBox2D elipse;
+	cv::RotatedRect elipse;
 	double u00;
   double u11;
   double u01;
@@ -590,22 +524,22 @@ CvBox2D Blob::ellipse()
   double temp;
 
 	// it is calculated?
-	if (mProperties.find(BlobGetMajorAxisLength().GetNom()) != mProperties.end())
+	if (mProperties.find(BlobGetMajorAxisLength().name()) != mProperties.end())
 	{
 		// build a ellipse from calculated properties
-		elipse.size.width = mProperties[BlobGetMajorAxisLength().GetNom()];
-		elipse.size.height = mProperties[BlobGetMinorAxisLength().GetNom()];
-		elipse.angle = mProperties[BlobGetOrientation().GetNom()];
-		elipse.center.x = mProperties[BlobGetElipseXCenter().GetNom()];
-		elipse.center.y = mProperties[BlobGetElipseYCenter().GetNom()];
+		elipse.size.width = mProperties[BlobGetMajorAxisLength().name()];
+		elipse.size.height = mProperties[BlobGetMinorAxisLength().name()];
+		elipse.angle = mProperties[BlobGetOrientation().name()];
+		elipse.center.x = mProperties[BlobGetElipseXCenter().name()];
+		elipse.center.y = mProperties[BlobGetElipseYCenter().name()];
 	}	
 
 	// initialize properties
-	mProperties[BlobGetMajorAxisLength().GetNom()] = 0;
-	mProperties[BlobGetMinorAxisLength().GetNom()] = 0;
-	mProperties[BlobGetOrientation().GetNom()] = 0;
-	mProperties[BlobGetElipseXCenter().GetNom()] = 0;
-	mProperties[BlobGetElipseYCenter().GetNom()] = 0;
+	mProperties[BlobGetMajorAxisLength().name()] = 0;
+	mProperties[BlobGetMinorAxisLength().name()] = 0;
+	mProperties[BlobGetOrientation().name()] = 0;
+	mProperties[BlobGetElipseXCenter().name()] = 0;
+	mProperties[BlobGetElipseYCenter().name()] = 0;
 	elipse.angle = 0;
 	elipse.size.height = 0;
 	elipse.size.width = 0;
@@ -634,14 +568,14 @@ CvBox2D Blob::ellipse()
 	elipse.center.x = u10;
 	elipse.center.y = u01;
 
-	mProperties[BlobGetElipseXCenter().GetNom()] = elipse.center.x;
-	mProperties[BlobGetElipseYCenter().GetNom()] = elipse.center.y;
+	mProperties[BlobGetElipseXCenter().name()] = elipse.center.x;
+	mProperties[BlobGetElipseYCenter().name()] = elipse.center.y;
 	
 	temp = u20 + u02 + delta;
 	if (temp > 0)
 	{
 		elipse.size.width = sqrt( 2*(u20 + u02 + delta ));
-		mProperties[BlobGetMajorAxisLength().GetNom()] = elipse.size.width;
+		mProperties[BlobGetMajorAxisLength().name()] = elipse.size.width;
 	}	
 	else
 	{
@@ -652,7 +586,7 @@ CvBox2D Blob::ellipse()
 	if( temp > 0 )
 	{
 		elipse.size.height = sqrt( 2*(u20 + u02 - delta ) );
-		mProperties[BlobGetMinorAxisLength().GetNom()] = elipse.size.height;
+		mProperties[BlobGetMinorAxisLength().name()] = elipse.size.height;
 	}
 	else
 	{
@@ -669,8 +603,8 @@ CvBox2D Blob::ellipse()
 	}
 	// convert to degrees
 	elipse.angle = (180.0 / CV_PI) *elipse.angle;
-	elipse.angle+=180;
-	mProperties[BlobGetOrientation().GetNom()] = elipse.angle;
+	elipse.angle += 180;
+	mProperties[BlobGetOrientation().name()] = elipse.angle;
 
 	return elipse;
 }
@@ -689,15 +623,16 @@ CvBox2D Blob::ellipse()
    - CREATION DATE: 25-05-2005.
    - MODIFICATION: Date. Author. Description.
 */
-void Blob::fillBlob(IplImage* pImage, CvScalar color) 					  
+void Blob::fillBlob(cv::Mat& image, const cv::Scalar& color) 					  
 {
-	cvDrawContours( pImage,
-                  mExternalContour.contourPoints(),
-                  color,
-                  color,
-                  0,
-                  CV_FILLED,
-                  8 );
+  cv::drawContours(image,
+                   mExternalContour.contourPoints(),
+                   -1,            // draw all contours
+                   color,         // fill color
+                   CV_FILLED,     // thickness
+                   8,             // line type
+                   cv::noArray(), // heirarchy
+                   0);            // draw only the specified contour
 }
 
 
@@ -713,17 +648,15 @@ void Blob::fillBlob(IplImage* pImage, CvScalar color)
    - CREATION DATE: 25-05-2005.
    - MODIFICATION: Date. Author. Description.
 */
-t_PointList Blob::convexHull()
+void Blob::convexHull(PointContainer& hull)
 {
-	CvSeq* p_convex_hull = NULL;
-	if (mExternalContour.contourPoints())
+  const PointContainer& contour_points = mExternalContour.contourPoints();
+	if (contour_points.empty())
   {
-		p_convex_hull = cvConvexHull2( mExternalContour.contourPoints(),
-                                   mpStorage,
-                                   CV_COUNTER_CLOCKWISE,
-                                   1);
+    cv::convexHull(contour_points,
+                   hull,
+                   true);  // clockwise?
   }
-	return p_convex_hull;
 }
 
 /**
@@ -738,21 +671,12 @@ t_PointList Blob::convexHull()
    - CREATION DATE: 25-05-2005.
    - MODIFICATION: Date. Author. Description.
 */
-void Blob::joinBlob(Blob* pBlob)
+void Blob::joinBlob(const Blob& blob)
 {
-	CvSeqWriter writer;
-	CvSeqReader reader;
-	t_chainCode chainCode;
-
-	cvStartAppendToSeq( mExternalContour.chainCode(), &writer );
-	cvStartReadSeq( pBlob->externalContour()->chainCode(), &reader );
-
-	for (int i = 0; i < pBlob->externalContour()->chainCode()->total; ++i)
-	{
-		CV_READ_SEQ_ELEM( chainCode, reader );
-		CV_WRITE_SEQ_ELEM( chainCode, writer );
-	}	
-	cvEndWriteSeq( &writer );
+  // @todo proper set join implementation
+  ChainCodeContainer& contour = mExternalContour.mContour;
+  const ChainCodeContainer& src_contour = blob.mExternalContour.mContour;
+  contour.insert(contour.end(), src_contour.begin(), src_contour.end());
 
 	// reset stats for the blob
 	mProperties.clear();

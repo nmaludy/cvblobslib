@@ -15,42 +15,10 @@ MODIFICATIONS (Modification, Author, Date):
 #ifndef _CVBLOBS2_BLOBRESULT_H_
 #define _CVBLOBS2_BLOBRESULT_H_
 
-#if _MSC_VER > 1000 
-#pragma once
-#endif // _MSC_VER > 1000
-
-
-#include <cvblobs2/BlobLibraryConfiguration.h>
-#include <math.h>
-#include <opencv/cxcore.h>
-
-#include <vector>		// vectors de la STL
-#include <cvblobs2/Blob.h>
-#include <cvblobs2/BlobOperators.h>
-#include <cvblobs2/ComponentLabeling.h>
+#include <cvblobs2/CvBlobsFwd.h>
+#include <string>
 
 CVBLOBS_BEGIN_NAMESPACE
-
-/**************************************************************************
-	Filtres / Filters
-**************************************************************************/
-
-//! accions que es poden fer amb els filtres
-//! Actions performed by a filter (include or exclude blobs)
-#define B_INCLUDE				1L
-#define B_EXCLUDE				2L
-
-//! condicions sobre els filtres
-//! Conditions to apply the filters
-#define B_EQUAL					3L
-#define B_NOT_EQUAL				4L
-#define B_GREATER				5L
-#define B_LESS					6L
-#define B_GREATER_OR_EQUAL		7L
-#define B_LESS_OR_EQUAL			8L
-#define B_INSIDE			    9L
-#define B_OUTSIDE			    10L
-
 
 /**************************************************************************
 	Excepcions / Exceptions
@@ -72,6 +40,7 @@ public:
 	BlobResult();
 	//! constructor a partir d'una imatge
 	//! Image constructor, it creates an object with the blobs of the image
+  // @todo
 	// BlobResult(IplImage* pSource, IplImage* pMask, uchar backgroundColor);
 	//! constructor de còpia
 	//! Copy constructor
@@ -93,7 +62,7 @@ public:
   
   //! Afegeix un blob al conjunt
 	//! Adds a blob to the set of blobs
-	void addBlob(BlobPtr blob);
+	void addBlob(BlobPtrType blob);
 
 	//! Calcula un valor sobre tots els blobs de la classe retornant un std::vector<double>
 	//! Computes some property on all the blobs of the class
@@ -106,11 +75,11 @@ public:
 	//! Retorna aquells blobs que compleixen les condicions del filtre en el destination 
 	//! Filters the blobs of the class using some property
 	void filter(BlobResult& dst,
-              int filterAction,
-              BlobOperator* pOperator,
-              int condition,
-              double lowLimit,
-              double highLimit = 0);
+                FilterAction filterAction,
+                BlobOperator* pOperator,
+                FilterCondition condition,
+                double lowLimit,
+                double highLimit = 0);
 			
 	//! Retorna l'enèssim blob segons un determinat criteri
 	//! Sorts the blobs of the class acording to some criteria and returns the n-th blob
@@ -143,7 +112,7 @@ protected:
 
 	//! Vector amb els blobs
 	//! Vector with all the blobs
-	Blob_vector		mBlobs;
+	BlobContainer mBlobs;
 };
 
 inline std::size_t BlobResult::numBlobs() const 
@@ -152,5 +121,13 @@ inline std::size_t BlobResult::numBlobs() const
 }
 
 CVBLOBS_END_NAMESPACE
+
+namespace std {
+template<>
+void swap(cvblobs::BlobResult& lhs, cvblobs::BlobResult& rhs)
+{
+  lhs.swap(rhs);
+}
+} // namespace std
 
 #endif // _CVBLOBS2_BLOBRESULT_H_

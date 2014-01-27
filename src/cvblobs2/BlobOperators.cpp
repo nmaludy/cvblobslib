@@ -1,12 +1,6 @@
-// deactivation of warning 4786 
-// (identifier was truncated to '255' characters in the debug information)
-#if _MSC_VER > 1000
-  #pragma warning(disable: 4786)
-  #pragma warning(disable: 4503)
-#endif
-
-#include <limits.h>
 #include <cvblobs2/BlobOperators.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <limits>
 
 CVBLOBS_BEGIN_NAMESPACE
 
@@ -62,13 +56,13 @@ double BlobGetMoment::operator()(Blob &blob)
 */
 double BlobGetHullPerimeter::operator()(Blob &blob)
 {
-	CvSeq* p_convex_hull = blob.convexHull();
+	PointContainer convex_hull;
+  blob.convexHull(convex_hull);
   double perimeter = 0.0;
 
-  if (p_convex_hull != NULL)
+  if (!convex_hull.empty())
   {
-    perimeter = fabs(cvArcLength(p_convex_hull, CV_WHOLE_SEQ, 1));
-    cvClearSeq(p_convex_hull);
+    perimeter = fabs( cv::arcLength(convex_hull, true) );  // true == closed
   }
   
 	return perimeter;
@@ -76,13 +70,13 @@ double BlobGetHullPerimeter::operator()(Blob &blob)
 
 double BlobGetHullArea::operator()(Blob &blob)
 {
-	CvSeq* p_convex_hull = blob.convexHull();
+	PointContainer convex_hull;
+  blob.convexHull(convex_hull);
 	double area = 0.0;
 
-  if (p_convex_hull != NULL)
+  if (!convex_hull.empty())
   {
-		area = fabs(cvContourArea(p_convex_hull));
-    cvClearSeq(p_convex_hull);
+		area = fabs( cv::contourArea(convex_hull) );
   }
 
 	return area;
@@ -100,23 +94,23 @@ double BlobGetHullArea::operator()(Blob &blob)
 */
 double BlobGetMinXatMinY::operator()(Blob &blob)
 {
-	double result = LONG_MAX;
-	
-	CvSeqReader reader;
-	CvPoint actual_point;
-	t_PointList p_extern_contour = blob.externalContour()->contourPoints();
+	double result = std::numeric_limits<double>::max();
+	const PointContainer& extern_contour = blob.externalContour()->contourPoints();
   
-	if (p_extern_contour == NULL)
+	if (extern_contour.empty())
   {
     return result;
   }
-	cvStartReadSeq( p_extern_contour, &reader);
 
-	for (int i = 0; i < p_extern_contour->total; ++i)
+  typedef PointContainer::const_iterator PointIter;
+  // define end outside for loop for performance and intent
+  // we are not going to modify this container
+  PointIter end_iter = extern_contour.end();
+	for (PointIter iter = extern_contour.begin(); iter != end_iter; ++iter)
 	{
-		CV_READ_SEQ_ELEM( actual_point, reader);
-
-		if ((actual_point.y == blob.minY()) && (actual_point.x < result) )
+    const cv::Point& actual_point = *iter;
+		if (actual_point.y == blob.minY() &&
+        actual_point.x < result)
 		{
 			result = actual_point.x;
 		}	
@@ -137,21 +131,23 @@ double BlobGetMinXatMinY::operator()(Blob &blob)
 */
 double BlobGetMinYatMaxX::operator()(Blob &blob)
 {
-	double result = LONG_MAX;
-	
-	CvSeqReader reader;
-	CvPoint actual_point;
-	t_PointList externContour;
-	
-	externContour = blob.externalContour()->contourPoints();
-	if( !externContour ) return result;
-	cvStartReadSeq( externContour, &reader);
+	double result = std::numeric_limits<double>::max();
+	const PointContainer& extern_contour = blob.externalContour()->contourPoints();
+  
+	if (extern_contour.empty())
+  {
+    return result;
+  }
 
-	for( int i=0; i< externContour->total; i++)
+  typedef PointContainer::const_iterator PointIter;
+  // define end outside for loop for performance and intent
+  // we are not going to modify this container
+  PointIter end_iter = extern_contour.end();
+	for (PointIter iter = extern_contour.begin(); iter != end_iter; ++iter)
 	{
-		CV_READ_SEQ_ELEM( actual_point, reader);
-
-		if( (actual_point.x == blob.maxX()) && (actual_point.y < result) )
+    const cv::Point& actual_point = *iter;	
+		if (actual_point.x == blob.maxX() &&
+        actual_point.y < result)
 		{
 			result = actual_point.y;
 		}	
@@ -172,22 +168,24 @@ double BlobGetMinYatMaxX::operator()(Blob &blob)
 */
 double BlobGetMaxXatMaxY::operator()(Blob &blob)
 {
-	double result = LONG_MIN;
-	
-	CvSeqReader reader;
-	CvPoint actual_point;
-	t_PointList externContour;
-	
-	externContour = blob.externalContour()->contourPoints();
-	if( !externContour ) return result;
+	double result = std::numeric_limits<double>::max();
+	const PointContainer& extern_contour = blob.externalContour()->contourPoints();
+  
+	if (extern_contour.empty())
+  {
+    return result;
+  }
 
-	cvStartReadSeq( externContour, &reader);
-
-	for( int i=0; i< externContour->total; i++)
+  typedef PointContainer::const_iterator PointIter;
+  // define end outside for loop for performance and intent
+  // we are not going to modify this container
+  PointIter end_iter = extern_contour.end();
+	for (PointIter iter = extern_contour.begin(); iter != end_iter; ++iter)
 	{
-		CV_READ_SEQ_ELEM( actual_point, reader);
+    const cv::Point& actual_point = *iter;
 
-		if( (actual_point.y == blob.maxY()) && (actual_point.x > result) )
+    if (actual_point.y == blob.maxY() &&
+        actual_point.x > result)
 		{
 			result = actual_point.x;
 		}	
@@ -208,23 +206,24 @@ double BlobGetMaxXatMaxY::operator()(Blob &blob)
 */
 double BlobGetMaxYatMinX::operator()(Blob &blob)
 {
-	double result = LONG_MIN;
-	
-	CvSeqReader reader;
-	CvPoint actual_point;
-	t_PointList externContour;
-	
-	externContour = blob.externalContour()->contourPoints();
-	if( !externContour ) return result;
+	double result = std::numeric_limits<double>::max();
+	const PointContainer& extern_contour = blob.externalContour()->contourPoints();
+  
+	if (extern_contour.empty())
+  {
+    return result;
+  }
 
-	cvStartReadSeq( externContour, &reader);
-
-	
-	for( int i=0; i< externContour->total; i++)
+  typedef PointContainer::const_iterator PointIter;
+  // define end outside for loop for performance and intent
+  // we are not going to modify this container
+  PointIter end_iter = extern_contour.end();
+	for (PointIter iter = extern_contour.begin(); iter != end_iter; ++iter)
 	{
-		CV_READ_SEQ_ELEM( actual_point, reader);
-
-		if( (actual_point.x == blob.minX()) && (actual_point.y > result) )
+    const cv::Point& actual_point = *iter;
+    
+		if (actual_point.x == blob.minX() &&
+        actual_point.y > result)
 		{
 			result = actual_point.y;
 		}	
@@ -426,89 +425,14 @@ double BlobGetDistanceFromPoint::operator()(Blob &blob)
 */
 double BlobGetXYInside::operator()(Blob &blob)
 {
-	if( blob.externalContour()->contourPoints() )
+  const PointContainer& extern_contour = blob.externalContour()->contourPoints();
+	if (!extern_contour.empty())
 	{
-		return cvPointPolygonTest( blob.externalContour()->contourPoints(), m_p,0) >= 0;
+    // false == don't measure distance
+		return cv::pointPolygonTest(extern_contour, mPoint, false) >= 0;
 	}
 
 	return 0;
 }
-#ifdef BLOB_OBJECT_FACTORY
-
-/**
-- FUNCIÓ: RegistraTotsOperadors
-- FUNCIONALITAT: Registrar tots els operadors definits a blob.h
-- PARÀMETRES:
-	- fabricaOperadorsBlob: fàbrica on es registraran els operadors
-- RESULTAT:
-	- Modifica l'objecte fabricaOperadorsBlob
-- RESTRICCIONS:
-	- Només es registraran els operadors de blob.h. Si se'n volen afegir, cal afegir-los amb 
-	  el mètode Register de la fàbrica.
-- AUTOR: rborras
-- DATA DE CREACIÓ: 2006/05/18
-- MODIFICACIÓ: Data. Autor. Descripció.
-*/
-void RegistraTotsOperadors( t_OperadorBlobFactory &fabricaOperadorsBlob )
-{
-	// blob shape
-	fabricaOperadorsBlob.Register( BlobGetArea().GetNom(), Type2Type<BlobGetArea>());
-	fabricaOperadorsBlob.Register( BlobGetRelativeArea().GetNom(), Type2Type<BlobGetRelativeArea>());
-	fabricaOperadorsBlob.Register( BlobGetBreadth().GetNom(), Type2Type<BlobGetBreadth>());
-	fabricaOperadorsBlob.Register( BlobGetCompactness().GetNom(), Type2Type<BlobGetCompactness>());
-	fabricaOperadorsBlob.Register( BlobGetElongation().GetNom(), Type2Type<BlobGetElongation>());
-	fabricaOperadorsBlob.Register( BlobGetExterior().GetNom(), Type2Type<BlobGetExterior>());
-	fabricaOperadorsBlob.Register( BlobGetLength().GetNom(), Type2Type<BlobGetLength>());
-	fabricaOperadorsBlob.Register( BlobGetPerimeter().GetNom(), Type2Type<BlobGetPerimeter>());
-	fabricaOperadorsBlob.Register( BlobGetRoughness().GetNom(), Type2Type<BlobGetRoughness>());
-
-	// blob color
-	fabricaOperadorsBlob.Register( BlobGetMean(NULL).GetNom(), Type2Type<BlobGetMean>());
-	fabricaOperadorsBlob.Register( BlobGetReferencedMean(NULL,0).GetNom(), Type2Type<BlobGetReferencedMean>());
-	fabricaOperadorsBlob.Register( BlobGetStdDev(NULL).GetNom(), Type2Type<BlobGetStdDev>());
-
-	// extern pixels
-	fabricaOperadorsBlob.Register( BlobGetExternPerimeterRatio().GetNom(), Type2Type<BlobGetExternPerimeterRatio>());
-	fabricaOperadorsBlob.Register( BlobGetExternHullPerimeterRatio().GetNom(), Type2Type<BlobGetExternHullPerimeterRatio>());
-	fabricaOperadorsBlob.Register( BlobGetExternPerimeter().GetNom(), Type2Type<BlobGetExternPerimeter>());
-	
-
-	// hull 
-	fabricaOperadorsBlob.Register( BlobGetHullPerimeter().GetNom(), Type2Type<BlobGetHullPerimeter>());
-	fabricaOperadorsBlob.Register( BlobGetHullArea().GetNom(), Type2Type<BlobGetHullArea>());
-	
-
-	// elipse info
-	fabricaOperadorsBlob.Register( BlobGetMajorAxisLength().GetNom(), Type2Type<BlobGetMajorAxisLength>());
-	fabricaOperadorsBlob.Register( BlobGetMinorAxisLength().GetNom(), Type2Type<BlobGetMinorAxisLength>());
-	fabricaOperadorsBlob.Register( BlobGetAxisRatio().GetNom(), Type2Type<BlobGetAxisRatio>());
-	fabricaOperadorsBlob.Register( BlobGetOrientation().GetNom(), Type2Type<BlobGetOrientation>());
-	fabricaOperadorsBlob.Register( BlobGetOrientationCos().GetNom(), Type2Type<BlobGetOrientationCos>());
-	fabricaOperadorsBlob.Register( BlobGetAreaElipseRatio().GetNom(), Type2Type<BlobGetAreaElipseRatio>());
-
-	// min an max
-	fabricaOperadorsBlob.Register( BlobGetMaxX().GetNom(), Type2Type<BlobGetMaxX>());
-	fabricaOperadorsBlob.Register( BlobGetMaxY().GetNom(), Type2Type<BlobGetMaxY>());
-	fabricaOperadorsBlob.Register( BlobGetMinX().GetNom(), Type2Type<BlobGetMinX>());
-	fabricaOperadorsBlob.Register( BlobGetMinY().GetNom(), Type2Type<BlobGetMinY>());
-
-	fabricaOperadorsBlob.Register( BlobGetMaxXatMaxY().GetNom(), Type2Type<BlobGetMaxXatMaxY>());
-	fabricaOperadorsBlob.Register( BlobGetMaxYatMinX().GetNom(), Type2Type<BlobGetMaxYatMinX>());
-	fabricaOperadorsBlob.Register( BlobGetMinXatMinY().GetNom(), Type2Type<BlobGetMinXatMinY>());
-	fabricaOperadorsBlob.Register( BlobGetMinYatMaxX().GetNom(), Type2Type<BlobGetMinYatMaxX>());
-
-	// coordinate info
-	fabricaOperadorsBlob.Register( BlobGetXYInside().GetNom(), Type2Type<BlobGetXYInside>());
-	fabricaOperadorsBlob.Register( BlobGetDiffY().GetNom(), Type2Type<BlobGetDiffY>());
-	fabricaOperadorsBlob.Register( BlobGetDiffX().GetNom(), Type2Type<BlobGetDiffX>());
-	fabricaOperadorsBlob.Register( BlobGetXCenter().GetNom(), Type2Type<BlobGetXCenter>());
-	fabricaOperadorsBlob.Register( BlobGetYCenter().GetNom(), Type2Type<BlobGetYCenter>());
-	fabricaOperadorsBlob.Register( BlobGetDistanceFromPoint().GetNom(), Type2Type<BlobGetDistanceFromPoint>());
-
-	// moments
-	fabricaOperadorsBlob.Register( BlobGetMoment().GetNom(), Type2Type<BlobGetMoment>());
-}
-
-#endif	//BLOB_OBJECT_FACTORY
 
 CVBLOBS_END_NAMESPACE

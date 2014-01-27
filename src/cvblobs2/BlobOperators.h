@@ -9,9 +9,6 @@
 		Helper classes to perform operations on blobs
 **************************************************************************/
 
-//! Factor de conversió de graus a radians
-#define DEGREE2RAD		(CV_PI / 180.0)
-
 CVBLOBS_BEGIN_NAMESPACE
 
 //! Classe d'on derivarem totes les operacions sobre els blobs
@@ -26,24 +23,24 @@ class BlobOperator
 		double result;
 
 		// verify if operator is calculated
-		Blob::t_properties* p_props = blob.properties();
-		if (p_props->find(GetNom()) == p_props->end())
+		Blob::PropertiesType* p_props = blob.properties();
+		if (p_props->find(name()) == p_props->end())
 		{
 			// if not calculate it and add it to blob properties
 			result = operator()(blob);
-			(*p_props)[GetNom()] = result;
+			(*p_props)[name()] = result;
 		}
 		else
 		{
 			// if is calculate, get result (without calculating it again)
-			result = (*p_props)[GetNom()];
+			result = (*p_props)[name()];
 		}
 
 		return result;
 	}
 
 	//! Get operator name
-	virtual std::string GetNom() = 0;
+	virtual std::string name() = 0;
 
 	operator BlobOperator*()
 	{
@@ -56,27 +53,6 @@ class BlobOperator
 	virtual double operator()(Blob &blob) = 0;
 };
 
-#ifdef BLOB_OBJECT_FACTORY
-/**
-   Funció per comparar dos identificadors dins de la fàbrica de BlobOperators
-*/
-struct functorComparacioIdOperador
-{
-  bool operator()(const std::string &s1, const std::string &s2) const
-  {
-		return s1.compare(s2) > 0;
-  }
-};
-
-//! Definition of Object factory type for BlobOperator objects
-typedef ObjectFactory<BlobOperator, std::string, functorComparacioIdOperador > t_OperadorBlobFactory;
-
-//! Funció global per a registrar tots els operadors definits a blob.h
-void RegistraTotsOperadors( t_OperadorBlobFactory &fabricaOperadorsBlob );
-
-#endif
-
-
 //! Classe per calcular l'etiqueta d'un blob
 //! Class to get ID of a blob
 class BlobGetID : public BlobOperator
@@ -86,7 +62,7 @@ class BlobGetID : public BlobOperator
 	{ 
 		return blob.id(); 
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetID";
 	}
@@ -102,7 +78,7 @@ class BlobGetArea : public BlobOperator
 	{ 
 		return blob.area(); 
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetArea";
 	}
@@ -117,7 +93,7 @@ class BlobGetPerimeter: public BlobOperator
 	{ 
 		return blob.perimeter(); 
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetPerimeter";
 	}
@@ -154,7 +130,7 @@ class BlobGetExterior: public BlobOperator
                          m_xBorderLeft, m_xBorderRight,
                          m_yBorderTop,  m_yBorderBottom); 
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetExterior";
 	}
@@ -170,25 +146,25 @@ class BlobGetMean: public BlobOperator
 {
  public:
 	BlobGetMean()
-	{
-		m_image = NULL;
-	}
-	BlobGetMean( IplImage *image )
-	{
-		m_image = image;
-	};
+      : mImage()
+	{}
+  
+	BlobGetMean(cv::Mat& image)
+      : mImage(image)
+	{}
 
   double operator()(Blob &blob)
 	{ 
-		return blob.mean(m_image); 
+		return blob.mean(mImage); 
 	}
-	std::string GetNom()
+  
+	std::string name()
 	{
 		return "BlobGetMean";
 	}
+  
  private:
-
-	IplImage *m_image;
+  cv::Mat mImage;
 };
 
 //! Classe per calcular la desviació estàndard dels nivells de gris d'un blob
@@ -197,24 +173,25 @@ class BlobGetStdDev: public BlobOperator
 {
  public:
 	BlobGetStdDev()
-	{
-		m_image = NULL;
-	}
-	BlobGetStdDev( IplImage *image )
-	{
-		m_image = image;
-	};
+      : mImage()
+	{}
+  
+	BlobGetStdDev(cv::Mat& image)
+      : mImage(image)
+	{}
+  
   double operator()(Blob &blob)
-	{ 
-		return blob.stdDev(m_image); 
+	{
+		return blob.stdDev(mImage);
 	}
-	std::string GetNom()
+  
+	std::string name()
 	{
 		return "BlobGetStdDev";
 	}
  private:
 
-	IplImage *m_image;
+  cv::Mat mImage;
 
 };
 
@@ -225,28 +202,29 @@ class BlobGetReferencedMean: public BlobOperator
 {
  public:
 	BlobGetReferencedMean()
-	{
-		m_image = NULL;
-		m_reference = 0;
-	}
-	BlobGetReferencedMean( IplImage *image, double reference )
-	{
-		m_image = image;
-		m_reference = reference;
-	};
+      : mImage(),
+        mReference(0.0)
+	{}
+  
+	BlobGetReferencedMean(cv::Mat& image, double reference)
+      : mImage(image),
+        mReference(reference)
+	{}
 
   double operator()(Blob &blob)
 	{ 
-		return m_reference - blob.mean(m_image);
+		return mReference - blob.mean(mImage);
 	}
-	std::string GetNom()
+  
+	std::string name()
 	{
 		return "BlobGetReferencedMean";
 	}
+  
  private:
+  cv::Mat mImage;
 	//! Value to reference the mean
-	double m_reference;
-	IplImage *m_image;
+	double mReference;
 };
 
 //! Classe per calcular la compacitat d'un blob
@@ -255,7 +233,7 @@ class BlobGetCompactness: public BlobOperator
 {
  public:
   double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetCompactness";
 	}
@@ -267,7 +245,7 @@ class BlobGetLength: public BlobOperator
 {
  public:
   double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetLength";
 	}
@@ -279,7 +257,7 @@ class BlobGetBreadth: public BlobOperator
 {
  public:
   double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetBreadth";
 	}
@@ -293,7 +271,7 @@ class BlobGetDiffX: public BlobOperator
 	{
 		return blob.boundingBox().width;
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetDiffX";
 	}
@@ -307,7 +285,7 @@ class BlobGetDiffY: public BlobOperator
 	{
 		return blob.boundingBox().height;
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetDiffY";
 	}
@@ -332,7 +310,7 @@ class BlobGetMoment: public BlobOperator
 		m_q = q;
 	};
 	double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetMoment";
 	}
@@ -348,7 +326,7 @@ class BlobGetHullPerimeter: public BlobOperator
 {
  public:
   double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetHullPerimeter";
 	}
@@ -360,7 +338,7 @@ class BlobGetHullArea: public BlobOperator
 {
  public:
   double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetHullArea";
 	}
@@ -372,7 +350,7 @@ class BlobGetMinXatMinY: public BlobOperator
 {
  public:
   double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetMinXatMinY";
 	}
@@ -384,7 +362,7 @@ class BlobGetMinYatMaxX: public BlobOperator
 {
  public:
   double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetMinYatMaxX";
 	}
@@ -396,7 +374,7 @@ class BlobGetMaxXatMaxY: public BlobOperator
 {
  public:
   double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetMaxXatMaxY";
 	}
@@ -408,7 +386,7 @@ class BlobGetMaxYatMinX: public BlobOperator
 {
  public:
   double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetMaxYatMinX";
 	}
@@ -423,7 +401,7 @@ class BlobGetMinX: public BlobOperator
 	{
 		return blob.minX();
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetMinX";
 	}
@@ -438,7 +416,7 @@ class BlobGetMaxX: public BlobOperator
 	{
 		return blob.maxX();
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetMaxX";
 	}
@@ -453,7 +431,7 @@ class BlobGetMinY: public BlobOperator
 	{
 		return blob.minY();
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetMinY";
 	}
@@ -468,7 +446,7 @@ class BlobGetMaxY: public BlobOperator
 	{
 		return blob.maxY();
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetMaxY";
 	}
@@ -481,7 +459,7 @@ class BlobGetElongation: public BlobOperator
 {
  public:
   double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetElongation";
 	}
@@ -493,7 +471,7 @@ class BlobGetRoughness: public BlobOperator
 {
  public:
   double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetRoughness";
 	}
@@ -517,7 +495,7 @@ class BlobGetDistanceFromPoint: public BlobOperator
 	}
 
   double operator()(Blob &blob);
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetDistanceFromPoint";
 	}
@@ -552,7 +530,7 @@ class BlobGetExternPerimeter: public BlobOperator
                                 m_xBorderLeft, m_xBorderRight,
                                 m_yBorderTop,  m_yBorderBottom);
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetExternPerimeter";
 	}
@@ -596,7 +574,7 @@ class BlobGetExternPerimeterRatio: public BlobOperator
                                   m_xBorderLeft, m_xBorderRight,
                                   m_yBorderTop, m_yBorderBottom);
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetExternPerimeterRatio";
 	}
@@ -635,7 +613,7 @@ class BlobGetExternHullPerimeterRatio: public BlobOperator
 		else
 			return blob.externPerimeter(m_mask, m_xBorder, m_yBorder);
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetExternHullPerimeterRatio";
 	}
@@ -654,7 +632,7 @@ class BlobGetXCenter: public BlobOperator
 	{
 		return blob.minX() + (( blob.maxX() - blob.minX() ) / 2.0);
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetXCenter";
 	}
@@ -669,7 +647,7 @@ class BlobGetYCenter: public BlobOperator
 	{
 		return blob.minY() + (( blob.maxY() - blob.minY() ) / 2.0);
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetYCenter";
 	}
@@ -686,7 +664,7 @@ class BlobGetMajorAxisLength: public BlobOperator
 
 		return elipse.size.width;
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetMajorAxisLength";
 	}
@@ -711,7 +689,7 @@ class BlobGetAreaElipseRatio: public BlobOperator
 
 		return ratioAreaElipseAreaTaca;
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetAreaElipseRatio";
 	}
@@ -728,7 +706,7 @@ class BlobGetMinorAxisLength: public BlobOperator
 
 		return elipse.size.height;
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetMinorAxisLength";
 	}
@@ -744,7 +722,7 @@ class BlobGetOrientation: public BlobOperator
 		CvBox2D elipse = blob.ellipse();
 		return elipse.angle;
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetOrientation";
 	}
@@ -760,7 +738,7 @@ class BlobGetElipseXCenter: public BlobOperator
 		CvBox2D elipse = blob.ellipse();
 		return elipse.center.x;
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetElipseXCenter";
 	}
@@ -777,7 +755,7 @@ class BlobGetElipseYCenter: public BlobOperator
 		CvBox2D elipse = blob.ellipse();
 		return elipse.center.y;
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetElipseYCenter";
 	}
@@ -791,9 +769,9 @@ class BlobGetOrientationCos: public BlobOperator
   double operator()(Blob &blob)
 	{
 		BlobGetOrientation getOrientation;
-		return fabs( cos( getOrientation(blob)*DEGREE2RAD ));
+		return fabs( cos( getOrientation(blob)* CVBLOBS_DEGREE2RAD ));
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetOrientationCos";
 	}
@@ -819,7 +797,7 @@ class BlobGetAxisRatio: public BlobOperator
 		else
 			return 0;
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetAxisRatio";
 	}
@@ -834,18 +812,18 @@ class BlobGetXYInside: public BlobOperator
 	//! Constructor estàndard
 	//! Standard constructor
 	BlobGetXYInside()
-	{
-		m_p.x = 0;
-		m_p.y = 0;
-	}
+      : mPoint(0, 0)
+	{}
+  
 	//! Constructor: indiquem el punt
 	//! Constructor: sets the point
-	BlobGetXYInside( CvPoint2D32f p )
-	{
-		m_p = p;
-	};
-	double operator()(Blob &blob);
-	std::string GetNom()
+	BlobGetXYInside(const cv::Point2f point)
+      : mPoint(point)
+	{}
+  
+	virtual double operator()(Blob &blob);
+  
+	std::string name()
 	{
 		return "BlobGetXYInside";
 	}
@@ -853,7 +831,7 @@ class BlobGetXYInside: public BlobOperator
  private:
 	//! punt que considerem
 	//! point to be considered
-	CvPoint2D32f m_p;
+  cv::Point2f mPoint;
 };
 
 
@@ -884,7 +862,7 @@ class BlobGetRelativeArea: public BlobOperator
 
 		return 0;
 	}
-	std::string GetNom()
+	std::string name()
 	{
 		return "BlobGetRelativeArea";
 	}

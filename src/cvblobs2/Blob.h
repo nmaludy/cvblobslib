@@ -8,14 +8,8 @@
 #ifndef _CVBLOBS2_BLOB_H_
 #define _CVBLOBS2_BLOB_H_
 
-#ifdef _MSC_VER
-//! Disable warnings referred to 255 character truncation for the std:map
-#pragma warning( disable : 4786 )
-#endif
-
-#include <opencv/cxcore.h>
-#include <cvblobs2/BlobContour.h>
 #include <map>
+#include <cvblobs2/BlobContour.h>
 
 CVBLOBS_BEGIN_NAMESPACE
 
@@ -23,31 +17,32 @@ class Blob
 {
  public:
 	//! Type of blob properties: a map with variant types
-	typedef std::map<std::string, double> t_properties;
+	typedef std::map<std::string, double> PropertiesType;
 
 	Blob();
-	Blob(t_labelType id, CvPoint startPoint, CvSize originalImageSize);
+	Blob(LabelType id,
+       const cv::Point& startPoint,
+       const cv::Size& originalImageSize);
 	~Blob();
 
 	//! Copy constructor
-	Blob(const Blob& src);
-	Blob(const Blob* pSrc);
+	Blob(const Blob& source);
+	Blob(Blob* pSource);
 
-	//! Operador d'assignació
 	//! Assigment operator
-	Blob& operator=(const Blob& src);
+	Blob& operator=(const Blob& source);
+
+  //! swaps contents of this blob with other
+  void swap(Blob& other);
 	
 	//! Adds a new internal contour to the blob
 	void addInternalContour(const BlobContour& newContour);
 	
 	//! Retrieves contour in Freeman's chain code
 	inline BlobContour* externalContour();
-
-	//! Retrieves blob storage
-  inline CvMemStorage* storage();
   
 	//! Get label ID
-	inline t_labelType id() const;
+	inline LabelType id() const;
   
 	//! > 0 for extern blobs, 0 if not
 	int	exterior(IplImage *mask, 
@@ -73,10 +68,10 @@ class Blob
                          bool yBorderBottom = true);
 	
 	//! Get mean grey color
-	double mean(IplImage* pImage);
+	double mean(cv::Mat& image);
 
 	//! Get standard deviation grey color
-	double stdDev(IplImage* pImage);
+	double stdDev(cv::Mat& image);
 
 	//! Indica si el blob està buit ( no té cap info associada )
 	//! Shows if the blob has associated information
@@ -84,20 +79,20 @@ class Blob
 
 	//! Retorna el poligon convex del blob
 	//! Calculates the convex hull of the blob
-	t_PointList convexHull();
+	void convexHull(PointContainer& hull);
 
 	//! Pinta l'interior d'un blob d'un color determinat
 	//! Paints the blob in an image
-	void fillBlob(IplImage* pImage, CvScalar color);
+	void fillBlob(cv::Mat& image, const cv::Scalar& color);
 
 	//! Join a blob to current one (add's contour
-	void joinBlob(Blob* pBlob);
+	void joinBlob(const Blob& blob);
 
 	//! Get bounding box
-	CvRect boundingBox();
+  const cv::Rect& boundingBox();
   
 	//! Get bounding ellipse
-	CvBox2D ellipse();
+  cv::RotatedRect ellipse();
 
 	//! Minimun X	
 	inline double minX();
@@ -112,24 +107,37 @@ class Blob
 	inline double maxY();
 
 	//! Get mutable blob properties
-	inline t_properties* properties();
+	inline PropertiesType* properties();
 
 	//! Remove calculated property from results
 	inline void resetProperty(const std::string& propertyName);
   
  private:
 
-	static int cmp_func(const void* pA, const void* pB, void* pUserdata)
-	{
-    CvPoint* p_a = (CvPoint*)pA;
-    CvPoint* p_b = (CvPoint*)pB;
-    int y_diff = p_a->y - p_b->y;
-    int x_diff = p_a->x - p_b->x;
-    return y_diff ? y_diff : x_diff;
-	}
+  // sort points top-to-bottom left-to-right order
+  // y is compared before x for strict ordering
+  // lhs is above rhs if lhs.y < rhs.y
+  // lhs is left of rhs if lhs.x < rhs.x
+	struct TopToBottomLeftToRightCmp
+  {
+    bool operator()(const cv::Point& lhs, const cv::Point& rhs) const
+    {
+      // is lhs above rhs?
+      if (lhs.y < rhs.y)
+      {
+        return true;
+      }
+      // is lhs to the left of rhs?
+      else if (lhs.x < rhs.x)
+      {
+        return true;
+      }
+      return false;
+    }
+  };
 
 	//! Calculates mean and std deviation of blob in input image
-	void meanAndStdDev(IplImage* pImage, double& mean, double& stdDev);
+	void meanAndStdDev(cv::Mat& image, double& mean, double& stdDev);
 	
 	//! Deallocates all contours
 	void clearContours();
@@ -138,26 +146,24 @@ class Blob
 	// Blob contours
 	//////////////////////////////////////////////////////////////////////////
 
-	//! Contour storage memory
-	CvMemStorage* mpStorage;
 	//! External contour of the blob (crack codes)
 	BlobContour mExternalContour;
 	//! Internal contours (crack codes)
-	t_contourList mInternalContours;
+	ContourContainer mInternalContours;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Blob features
 	//////////////////////////////////////////////////////////////////////////
 
 	// all calculated blob properties
-	t_properties mProperties;
+	PropertiesType mProperties;
 
 	//! Label number
-	t_labelType mId;
+	LabelType mId;
 	//! Bounding box
-	CvRect mBoundingBox;
+  cv::Rect mBoundingBox;
 	//! Sizes from image where blob is extracted
-	CvSize mOriginalImageSize;
+  cv::Size mOriginalImageSize;
 };
 
 inline BlobContour* Blob::externalContour()
@@ -165,12 +171,7 @@ inline BlobContour* Blob::externalContour()
   return &mExternalContour;
 }
 
-inline CvMemStorage* Blob::storage()
-{
-  return mpStorage;
-}
-
-inline t_labelType Blob::id() const
+inline LabelType Blob::id() const
 {
   return mId;
 }
@@ -195,7 +196,7 @@ inline double Blob::maxY()
   return boundingBox().y + boundingBox().height;
 }
 
-inline Blob::t_properties* Blob::properties()
+inline Blob::PropertiesType* Blob::properties()
 {
   return &mProperties;
 }
@@ -206,5 +207,13 @@ inline void Blob::resetProperty(const std::string& propertyName)
 }
 
 CVBLOBS_END_NAMESPACE
+
+namespace std {
+template<>
+void swap(cvblobs::Blob& lhs, cvblobs::Blob& rhs)
+{
+  lhs.swap(rhs);
+}
+} // namespace std
 
 #endif // _CVBLOBS_BLOB_H_

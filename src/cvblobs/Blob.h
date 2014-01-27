@@ -157,6 +157,7 @@ private:
 
 	static int cmp_func( const void* _a, const void* _b, void* userdata )
 	{
+      (void)userdata;
     	CvPoint* a = (CvPoint*)_a;
     	CvPoint* b = (CvPoint*)_b;
 	    int y_diff = a->y - b->y;

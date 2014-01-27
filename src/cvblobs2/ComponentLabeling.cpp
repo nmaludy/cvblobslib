@@ -1,36 +1,9 @@
-#if (_MSC_VER > 1000)
-  // deactivate warning (identifier was truncated to '255' characters in the
-  // debug information) is a problem of msvc6.5
-  #pragma warning(disable: 4786)
-#endif // _MSC_VER > 1000
-
 #include <cvblobs2/ComponentLabeling.h>
+
+#include <cvblobs2/counted_ptr.h>
 #include <cvblobs2/Blob.h>
 
 namespace {
-
-//! Conversion from freeman code to coordinate increments (counterclockwise)
-//! coordinates are in {x, y} offsets relative to the current pixel
-//!
-//! Below is a picture of how the indexes in this array map to offsets relative
-//! to pixel P
-//!
-//!  5  6  7
-//!  4  P  0
-//!  3  2  1
-//!
-//! Example: to move bottom left from current pixel you can use
-//!    CvPoint offset = freemanCodeIncrement[3]
-static const CvPoint freemanCodeIncrement[8] = { {1, 0},   // 0 = right
-                                                 {1, -1},  // 1 = down right
-                                                 {0, -1},  // 2 = down
-                                                 {-1, -1}, // 3 = down left
-                                                 {-1, 0},  // 4 = left
-                                                 {-1, 1},  // 5 = up left
-                                                 {0, 1},   // 6 = up
-                                                 {1, 1} }; // 7 = up right
-
-
 
 /**
 - FUNCIÓ: 
@@ -89,7 +62,7 @@ inline bool GET_BELOW_VISITEDPIXEL(bool* pCurrentPixel, int imageWidth)
    - MODIFICACIÓ: Data. Autor. Descripció.
 */
 inline void ASSIGN_LABEL(CvPoint p,
-                         cvblobs:: t_labelType* pLabels,
+                         cvblobs::LabelType* pLabels,
                          int imageWidth,
                          int newLabel)
 {
@@ -133,7 +106,7 @@ CVBLOBS_BEGIN_NAMESPACE
 bool ComponentLabeling(IplImage* pInputImage,
                        IplImage* pMaskImage,
                        unsigned char backgroundColor,
-                       Blob_vector& blobs)
+                       BlobContainer& blobs)
 {
   bool b_internal_contour = false;
   bool b_external_contour = false;
@@ -149,8 +122,8 @@ bool ComponentLabeling(IplImage* pInputImage,
   unsigned char* p_below_mask_iter = NULL;
   
   //! current blob pointer
-	BlobPtr p_current_blob;
-	CvPoint current_point;
+  BlobPtrType p_current_blob;
+  cv::Point current_point;
 
 	// verify input image
   if (!CV_IS_IMAGE(pInputImage))
@@ -175,16 +148,16 @@ bool ComponentLabeling(IplImage* pInputImage,
 		p_below_mask_iter = NULL;
 	}
 
-	const CvSize image_sizes = cvSize(pInputImage->width, pInputImage->height);
+	const cv::Size image_sizes = cvSize(pInputImage->width, pInputImage->height);
 	const int image_width  = pInputImage->width;
 	const int image_height = pInputImage->height;
 
   const int num_pixels = pInputImage->width * pInputImage->height;
   
 	// row major vector with labelled image (deleted at end of function)
-	t_labelType* p_labels = new t_labelType[num_pixels];
-	memset(p_labels, 0, num_pixels * sizeof(t_labelType) ) ;
-  t_labelType* p_labels_iter = p_labels;
+	LabelType* p_labels = new LabelType[num_pixels];
+	memset(p_labels, 0, num_pixels * sizeof(LabelType) ) ;
+  LabelType* p_labels_iter = p_labels;
 
   // row major vector with visited points (deleted at end of function)
 	bool* p_visited_points = new bool[num_pixels];
@@ -260,7 +233,7 @@ bool ComponentLabeling(IplImage* pInputImage,
 				
 				// create new blob
 				p_current_blob =
-            BlobPtr( new Blob(current_label, current_point, image_sizes ) );
+            BlobPtrType( new Blob(current_label, current_point, image_sizes ) );
 
 				// contour tracing with current_label
 				contourTracing(pInputImage,
@@ -300,7 +273,7 @@ bool ComponentLabeling(IplImage* pInputImage,
 					if (contour_label > 0)
 					{
 						p_current_blob = blobs[contour_label - 1];
-						BlobContour new_contour(current_point, p_current_blob->storage());
+						BlobContour new_contour(current_point);
 						
 						// contour tracing with contour_label
 						contourTracing(pInputImage,
@@ -358,32 +331,32 @@ bool ComponentLabeling(IplImage* pInputImage,
 */
 void contourTracing(IplImage* pImage,
                     IplImage* pMaskImage,
-                    CvPoint contourStart,
-                    t_labelType* pLabels,
+                    cv::Point contourStart,
+                    LabelType* pLabels,
                     bool* pVisitedPoints,
-                    t_labelType label,
+                    LabelType label,
                     bool bInternalContour,
                     unsigned char backgroundColor,
                     BlobContour* pCurrentBlobContour)
 {
-  short movement = 0;
-	short initial_movement = 0;
+  ChainCode movement = CHAIN_CODE_RIGHT;
+	ChainCode initial_movement = CHAIN_CODE_RIGHT;
 	if (bInternalContour)
 	{
-		initial_movement = 7; // old value: 3;
+		initial_movement = CHAIN_CODE_DOWN_RIGHT; // old value: 3;
 	}
 	else
 	{
-		initial_movement = 3; // old value: 7;
+		initial_movement = CHAIN_CODE_UP_LEFT; // old value: 7;
 	}
 
-	CvPoint tsecond = tracer(pImage,
-                           pMaskImage,
-                           contourStart,
-                           pVisitedPoints,
-                           initial_movement, 
-                           backgroundColor,
-                           movement); // out param
+  cv::Point tsecond = tracer(pImage,
+                             pMaskImage,
+                             contourStart,
+                             pVisitedPoints,
+                             initial_movement, 
+                             backgroundColor,
+                             movement); // out param
 	
 	// assign current label to tnext
 	ASSIGN_LABEL( contourStart, pLabels, pImage->width, label );
@@ -402,8 +375,8 @@ void contourTracing(IplImage* pImage,
 	// assign label to next point 
 	ASSIGN_LABEL( tsecond, pLabels, pImage->width, label );
 	
-	CvPoint t     = tsecond;
-	CvPoint tnext = tsecond;
+  cv::Point t     = tsecond;
+  cv::Point tnext = tsecond;
 	
 	// while T is different than contourStart and Tnext is different than T
 	// follow contour until start point is reached again
@@ -415,8 +388,9 @@ void contourTracing(IplImage* pImage,
 		
 		t.x = tnext.x;
 		t.y = tnext.y;
-		initial_movement = (movement + 5) % 8;
-		
+    // @todo remove nasty enum casts
+		initial_movement = (ChainCode) (((int)movement + 5) % 8);
+    
 		// search for next contour point
 		tnext = tracer(pImage,
                    pMaskImage,
@@ -447,23 +421,22 @@ void contourTracing(IplImage* pImage,
    - DATA DE CREACIÓ: 2008/04/30
    - MODIFICACIÓ: Data. Autor. Descripció.
 */
-CvPoint tracer(IplImage* pImage,
-               IplImage* pMaskImage,
-               CvPoint point,
-               bool* pVisitedPoints,
-               short initialMovement,
-               unsigned char backgroundColor,
-               short& movement)
+cv::Point tracer(IplImage* pImage,
+                 IplImage* pMaskImage,
+                 cv::Point point,
+                 bool* pVisitedPoints,
+                 ChainCode initialMovement,
+                 unsigned char backgroundColor,
+                 ChainCode& movement)
 {
 	int d;
-	CvPoint next_point;
+  cv::Point next_point;
 	
 	for (d = 0; d <= 7; d++ )
 	{
-		movement = (initialMovement + d) % 8;
-		
-		next_point.x = point.x + freemanCodeIncrement[movement].x;
-		next_point.y = point.y + freemanCodeIncrement[movement].y;
+		movement = (ChainCode) (((int)initialMovement + d) % 8);
+
+    next_point = movePoint(point, movement);
 
 		// the point is inside image ?
 		if (next_point.x < 0 || next_point.x >= pImage->width || 
@@ -472,7 +445,7 @@ CvPoint tracer(IplImage* pImage,
 			// try other movement
 			continue;
 		}
-		
+    
 		// image has blobColor value in the new point?
 		if (GET_IMAGE_PIXEL(pImage, next_point) != backgroundColor &&
         GET_IMAGEMASK_PIXEL(pMaskImage, next_point))
@@ -487,7 +460,7 @@ CvPoint tracer(IplImage* pImage,
 	}
 
 	// no possible movement was found
-	movement = -1;
+	movement = CHAIN_CODE_INVALID;
   next_point = point;
 	return next_point;
 }

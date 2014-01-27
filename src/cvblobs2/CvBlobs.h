@@ -12,6 +12,7 @@
 #include <cvblobs2/BlobLibraryConfiguration.h>
 #include <cvblobs2/BlobOperators.h>
 #include <cvblobs2/BlobResult.h>
+#include <cvblobs2/ChainCode.h>
 #include <cvblobs2/ComponentLabeling.h>
 #include <cvblobs2/counted_ptr.h>
 
