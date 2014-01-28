@@ -45,7 +45,7 @@ class Blob
 	inline LabelType id() const;
   
 	//! > 0 for extern blobs, 0 if not
-	int	exterior(IplImage *mask, 
+	int	exterior(cv::Mat& mask, 
                bool xBorderLeft = true,
                bool xBorderRight = true,
                bool yBorderTop = true,
@@ -61,7 +61,7 @@ class Blob
 	double moment(int p, int q);
 
 	//! Compute extern perimeter 
-	double externPerimeter(IplImage* pMask,
+	double externPerimeter(cv::Mat& mask,
                          bool xBorderLeft = true,
                          bool xBorderRight = true,
                          bool yBorderTop = true,
@@ -216,4 +216,4 @@ void swap(cvblobs::Blob& lhs, cvblobs::Blob& rhs)
 }
 } // namespace std
 
-#endif // _CVBLOBS_BLOB_H_
+#endif // _CVBLOBS2_BLOB_H_

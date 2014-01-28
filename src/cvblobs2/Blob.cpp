@@ -170,13 +170,13 @@ double Blob::perimeter()
    - DATA DE CREACIÓ: 2008/05/06
    - MODIFICACIÓ: Data. Autor. Descripció.
 */
-int	Blob::exterior(IplImage* pMask, 
+int	Blob::exterior(cv::Mat& mask, 
                    bool bXBorderLeft   /* = true */,
                    bool bXBorderRight  /* = true */,
                    bool bYBorderTop    /* = true */,
                    bool bYBorderBottom /* = true */)
 {
-	if (externPerimeter(pMask,
+	if (externPerimeter(mask,
                       bXBorderLeft, bXBorderRight,
                       bYBorderTop,  bYBorderBottom) > 0)
 	{
@@ -205,7 +205,7 @@ int	Blob::exterior(IplImage* pMask,
    - NOTA: If BlobContour::GetContourPoints aproximates contours with a method different that NONE,
    this function will not give correct results
 */
-double Blob::externPerimeter(IplImage* pMaskImage, 
+double Blob::externPerimeter(cv::Mat& mask,
                              bool bXBorderLeft   /* = true */,
                              bool bXBorderRight  /* = true */,
                              bool bYBorderTop    /* = true */,
@@ -224,6 +224,8 @@ double Blob::externPerimeter(IplImage* pMaskImage,
 	{
 		return 0;
 	}
+
+  // @todo check Mask size
 
 	// create a sequence with the external points of the blob
   // this must be a std::vector for use with cv::arcLength
@@ -251,13 +253,13 @@ double Blob::externPerimeter(IplImage* pMaskImage,
 		}
 		else
 		{
-			if (pMaskImage != NULL)
+			if (!mask.empty())
 			{
 				// verify if some of 8-connected neighbours is black in mask
-				char* p_mask;
+				uchar* p_mask;
 				
-				p_mask = (pMaskImage->imageData + actual_point.x - 1 +
-                  (actual_point.y - 1) * pMaskImage->widthStep);
+				p_mask = (mask.data + actual_point.x - 1 +
+                  (actual_point.y - 1) * mask.step);
 				
 				for (int i = 0; i < 3; ++i, ++p_mask)
 				{
@@ -270,8 +272,8 @@ double Blob::externPerimeter(IplImage* pMaskImage,
 				
 				if (!find)
 				{
-					p_mask = (pMaskImage->imageData + actual_point.x - 1 +
-                    (actual_point.y ) * pMaskImage->widthStep);
+					p_mask = (mask.data + actual_point.x - 1 +
+                    (actual_point.y ) * mask.step);
 				
 					for (int i = 0; i < 3; ++i, ++p_mask)
 					{
@@ -285,8 +287,8 @@ double Blob::externPerimeter(IplImage* pMaskImage,
 			
 				if (!find)
 				{
-					p_mask = (pMaskImage->imageData + actual_point.x - 1 +
-                    (actual_point.y + 1) * pMaskImage->widthStep);
+					p_mask = (mask.data + actual_point.x - 1 +
+                    (actual_point.y + 1) * mask.step);
 
 					for (int i = 0; i < 3; ++i, ++p_mask)
 					{

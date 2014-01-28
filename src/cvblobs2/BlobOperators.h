@@ -104,40 +104,45 @@ class BlobGetPerimeter: public BlobOperator
 class BlobGetExterior: public BlobOperator
 {
  public:
+
 	BlobGetExterior()
-	{
-		m_mask = NULL;
-		m_xBorderLeft = false;
-		m_xBorderRight = false;
-		m_yBorderTop = false;
-		m_yBorderBottom = false;
-	}
-	BlobGetExterior(IplImage *mask, 
-                  bool xBorderLeft = true, 
-                  bool xBorderRight = true, 
-                  bool yBorderTop = true,
-                  bool yBorderBottom = true)
-	{
-		m_mask = mask;
-		m_xBorderLeft = xBorderLeft;
-		m_xBorderRight = xBorderRight;
-		m_yBorderTop = yBorderTop;
-		m_yBorderBottom = yBorderBottom;
-	}
+      : mMask(),
+        mbXBorderLeft(false),
+        mbXBorderRight(false),
+        mbYBorderTop(false),
+        mbYBorderBottom(false)
+	{}
+  
+	BlobGetExterior(cv::Mat& mask, 
+                  bool bXBorderLeft = true, 
+                  bool bXBorderRight = true, 
+                  bool bYBorderTop = true,
+                  bool bYBorderBottom = true)
+      : mMask(mask),
+        mbXBorderLeft(bXBorderLeft),
+        mbXBorderRight(bXBorderRight),
+        mbYBorderTop(bYBorderTop),
+        mbYBorderBottom(bYBorderBottom)
+	{}
+  
   double operator()(Blob &blob)
 	{ 
-		return blob.exterior(m_mask,
-                         m_xBorderLeft, m_xBorderRight,
-                         m_yBorderTop,  m_yBorderBottom); 
+		return blob.exterior(mMask,
+                         mbXBorderLeft, mbXBorderRight,
+                         mbYBorderTop,  mbYBorderBottom); 
 	}
+  
 	std::string name()
 	{
 		return "BlobGetExterior";
 	}
+  
  private:
-	IplImage *m_mask;
-	bool m_xBorderLeft, m_xBorderRight, 
-    m_yBorderTop, m_yBorderBottom;
+  cv::Mat mMask;
+	bool mbXBorderLeft;
+  bool mbXBorderRight;
+  bool mbYBorderTop;
+  bool mbYBorderBottom;
 };
 
 //! Classe per calcular la mitjana de nivells de gris d'un blob
@@ -510,33 +515,46 @@ class BlobGetDistanceFromPoint: public BlobOperator
 class BlobGetExternPerimeter: public BlobOperator
 {
  public:
-	BlobGetExternPerimeter()
-	{
-		m_mask = NULL;
-		m_xBorderLeft= m_xBorderRight= m_yBorderTop= m_yBorderBottom = false;
-	}
-	BlobGetExternPerimeter( IplImage *mask, bool xBorderLeft, bool xBorderRight, 
-                          bool yBorderTop, bool yBorderBottom)
-	{
-		m_mask = mask;
-		m_xBorderLeft = xBorderLeft;
-		m_xBorderRight = xBorderRight;
-		m_yBorderTop = yBorderTop;
-		m_yBorderBottom = yBorderBottom;
-	}
+
+  BlobGetExternPerimeter()
+      : mMask(),
+        mbXBorderLeft(false),
+        mbXBorderRight(false),
+        mbYBorderTop(false),
+        mbYBorderBottom(false)
+	{}
+  
+	BlobGetExternPerimeter(cv::Mat& mask, 
+                         bool bXBorderLeft,
+                         bool bXBorderRight,
+                         bool bYBorderTop,
+                         bool bYBorderBottom)
+      : mMask(mask),
+        mbXBorderLeft(bXBorderLeft),
+        mbXBorderRight(bXBorderRight),
+        mbYBorderTop(bYBorderTop),
+        mbYBorderBottom(bYBorderBottom)
+	{}
+
   double operator()(Blob &blob)
 	{
-		return blob.externPerimeter(m_mask,
-                                m_xBorderLeft, m_xBorderRight,
-                                m_yBorderTop,  m_yBorderBottom);
+		return blob.externPerimeter(mMask,
+                                mbXBorderLeft, mbXBorderRight,
+                                mbYBorderTop,  mbYBorderBottom);
 	}
-	std::string name()
+
+  std::string name()
 	{
 		return "BlobGetExternPerimeter";
 	}
+  
  private:
-	IplImage *m_mask;
-	bool m_xBorderLeft, m_xBorderRight, m_yBorderTop, m_yBorderBottom;
+
+  cv::Mat mMask;
+	bool mbXBorderLeft;
+  bool mbXBorderRight;
+  bool mbYBorderTop;
+  bool mbYBorderBottom;
 };
 
 //! Classe per calcular el ratio entre el perimetre i nombre pixels externs
@@ -546,41 +564,56 @@ class BlobGetExternPerimeter: public BlobOperator
 class BlobGetExternPerimeterRatio: public BlobOperator
 {
  public:
+
 	BlobGetExternPerimeterRatio()
-	{
-		m_mask = NULL;
-		m_xBorderLeft= m_xBorderRight= m_yBorderTop= m_yBorderBottom = false;
-	}
-	BlobGetExternPerimeterRatio( IplImage *mask,
-                               bool xBorderLeft = true,
-                               bool xBorderRight = true, 
-                               bool yBorderTop = true,
-                               bool yBorderBottom = true )
-	{
-		m_mask = mask;
-		m_xBorderLeft = xBorderLeft;
-		m_xBorderRight = xBorderRight;
-		m_yBorderTop = yBorderTop;
-		m_yBorderBottom = yBorderBottom;
-	}
+      : mMask(),
+        mbXBorderLeft(false),
+        mbXBorderRight(false),
+        mbYBorderTop(false),
+        mbYBorderBottom(false)
+	{}
+  
+	BlobGetExternPerimeterRatio(cv::Mat& mask,
+                              bool bXBorderLeft = true,
+                              bool bXBorderRight = true, 
+                              bool bYBorderTop = true,
+                              bool bYBorderBottom = true )
+      : mMask(mask),
+        mbXBorderLeft(bXBorderLeft),
+        mbXBorderRight(bXBorderRight),
+        mbYBorderTop(bYBorderTop),
+        mbYBorderBottom(bYBorderBottom)
+	{}
+  
   double operator()(Blob &blob)
 	{
-		if (blob.perimeter() != 0)
-			return blob.externPerimeter(m_mask,
-                                  m_xBorderLeft, m_xBorderRight,
-                                  m_yBorderTop,  m_yBorderBottom) / blob.perimeter();
+    const double perimeter = blob.perimeter();
+    const double extern_perimeter =
+        blob.externPerimeter(mMask,
+                             mbXBorderLeft, mbXBorderRight,
+                             mbYBorderTop, mbYBorderBottom);
+		if (perimeter != 0.0)
+    {
+			return extern_perimeter / perimeter;
+    }
 		else
-			return blob.externPerimeter(m_mask,
-                                  m_xBorderLeft, m_xBorderRight,
-                                  m_yBorderTop, m_yBorderBottom);
+    {
+			return extern_perimeter;
+    }
 	}
+  
 	std::string name()
 	{
 		return "BlobGetExternPerimeterRatio";
 	}
+  
  private:
-	IplImage *m_mask;
-	bool m_xBorderLeft, m_xBorderRight, m_yBorderTop, m_yBorderBottom;
+  
+  cv::Mat mMask;
+	bool mbXBorderLeft;
+  bool mbXBorderRight;
+  bool mbYBorderTop;
+  bool mbYBorderBottom;
 
 };
 
@@ -591,36 +624,47 @@ class BlobGetExternPerimeterRatio: public BlobOperator
 class BlobGetExternHullPerimeterRatio: public BlobOperator
 {
  public:
-	BlobGetExternHullPerimeterRatio()
-	{
-		m_mask = NULL;
-		m_xBorder = false;
-		m_yBorder = false;
-	}
-	BlobGetExternHullPerimeterRatio( IplImage *mask, bool xBorder = true, bool yBorder = true )
-	{
-		m_mask = mask;
-		m_xBorder = xBorder;
-		m_yBorder = yBorder;
-	}
+
+  BlobGetExternHullPerimeterRatio()
+      : mMask(),
+        mbXBorder(false),
+        mbYBorder(false)
+	{}
+  
+	BlobGetExternHullPerimeterRatio(cv::Mat& mask,
+                                  bool bXBorder = true,
+                                  bool bYBorder = true)
+      : mMask(mask),
+        mbXBorder(bXBorder),
+        mbYBorder(bYBorder)
+	{}
+  
   double operator()(Blob &blob)
 	{
 		BlobGetHullPerimeter getHullPerimeter;
-		double hullPerimeter;
-
-		if( (hullPerimeter = getHullPerimeter( blob ) ) != 0 )
-			return blob.externPerimeter(m_mask, m_xBorder, m_yBorder) / hullPerimeter;
+		const double hull_perimeter = getHullPerimeter(blob);
+    const double extern_perimeter = blob.externPerimeter(mMask,
+                                                         mbXBorder, mbYBorder);
+		if (hull_perimeter != 0.0)
+    {
+			return extern_perimeter / hull_perimeter;
+    }
 		else
-			return blob.externPerimeter(m_mask, m_xBorder, m_yBorder);
+    {
+			return extern_perimeter;
+    }
 	}
+  
 	std::string name()
 	{
 		return "BlobGetExternHullPerimeterRatio";
 	}
+  
  private:
-	IplImage *m_mask;
-	bool  m_xBorder, m_yBorder;
-
+  
+  cv::Mat mMask;
+	bool mbXBorder;
+  bool mbYBorder;
 };
 
 //! Classe per calcular el centre en el eix X d'un blob
