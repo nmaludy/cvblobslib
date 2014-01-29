@@ -59,23 +59,27 @@ file(GLOB HEADERS
 
 # define the GeographicJni library and specify whether it is shared or not.
 add_library(${CVBLOBS_LIBRARY_NAME} SHARED STATIC ${SOURCES} ${HEADERS})
-
 # set the library version so that the library will be named libX.so.MAJOR.MINOR
 # this will also create nice symlinks
 set_target_properties(${CVBLOBS_LIBRARY_NAME} PROPERTIES
   VERSION   ${CVBLOBS_VERSION}
   SOVERSION ${CVBLOBS_MAJOR_VERSION})
 
+# full name with .so postfix and versions for shared library  (ex: libcvblobs.so.0.1.0)
+set(CVBLOBS_SHARED_LIBRARY_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX})
+# full name with .a postfix for static library (ex: libcvblobs.a)
+set(CVBLOBS_STATIC_LIBRARY_NAME ${CMAKE_STATIC_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX})
+
 # create a sylink called libblob.so that links to libcvblobs.so
-set (LIBBLOB_LINK_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}blob${CMAKE_SHARED_LIBRARY_SUFFIX})
+set(LIBBLOB_LINK_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}blob${CMAKE_SHARED_LIBRARY_SUFFIX})
 add_custom_command(TARGET ${CVBLOBS_LIBRARY_NAME} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SHARED_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX} ${LIBBLOB_LINK_NAME}
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CVBLOBS_SHARED_LIBRARY_NAME} ${LIBBLOB_LINK_NAME}
 )
 
 # create a sylink called libblob.a that links to libcvblobs.a
 set (LIBBLOB_LINK_NAME ${CMAKE_STATIC_LIBRARY_PREFIX}blob${CMAKE_STATIC_LIBRARY_SUFFIX})
 add_custom_command(TARGET ${CVBLOBS_LIBRARY_NAME} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_STATIC_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX} ${LIBBLOB_LINK_NAME}
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CVBLOBS_STATIC_LIBRARY_NAME} ${LIBBLOB_LINK_NAME}
 )
 
  

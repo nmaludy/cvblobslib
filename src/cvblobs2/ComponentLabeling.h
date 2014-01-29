@@ -1,22 +1,19 @@
 #ifndef _CVBLOBS2_COMPONENTLABELING_H_
 #define _CVBLOBS2_COMPONENTLABELING_H_
 
-#include <opencv/cxcore.h>
 #include <cvblobs2/CvBlobsFwd.h>
-
-#include <cvblobs2/ChainCode.h>
 
 CVBLOBS_BEGIN_NAMESPACE
 
 //! Component labeling functionx
-bool ComponentLabeling(IplImage* pInputImage,
-                       IplImage* pMaskImage,
+bool ComponentLabeling(cv::Mat& inputImage,
+                       cv::Mat& maskImage,
                        unsigned char backgroundColor,
                        BlobContainer& blobs);
 
 //! Auxiliary functions
-void contourTracing(IplImage* pImage,
-                    IplImage* pMask,
+void contourTracing(cv::Mat& inputImage,
+                    cv::Mat& maskImage,
                     cv::Point contourStart,
                     LabelType *labels, 
                     bool* pbVisitedPoints,
@@ -25,8 +22,8 @@ void contourTracing(IplImage* pImage,
                     unsigned char backgroundColor,
                     BlobContour* pCurrentBlobContour);
 
-cv::Point tracer(IplImage* pImage,
-                 IplImage* pMask,
+cv::Point tracer(cv::Mat& inputImage,
+                 cv::Mat& maskImage,
                  cv::Point P,
                  bool* pbVisitedPoints,
                  ChainCode initialMovement,

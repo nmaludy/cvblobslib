@@ -5,43 +5,15 @@
 
 namespace {
 
-/**
-- FUNCIÓ: 
-- FUNCIONALITAT: 
-- PARÀMETRES:
-	- 
-- RESULTAT:
-	- 
-- RESTRICCIONS:
-	- 
-- AUTOR: rborras
-- DATA DE CREACIÓ: 2008/04/29
-- MODIFICACIÓ: Data. Autor. Descripció.
-*/
-inline unsigned char GET_ABOVE_IMAGEPIXEL(unsigned char* pCurrentPixel,
-                                          IplImage* pImage)
+inline bool GET_IMAGEMASK_PIXEL(const cv::Mat& maskImage, const cv::Point& point)
 {
-	return *(pCurrentPixel - pImage->widthStep);
-}
-inline unsigned char GET_BELOW_IMAGEPIXEL(unsigned char* pCurrentPixel,
-                                          IplImage* pImage)
-{
-	return *(pCurrentPixel + pImage->widthStep);
-}
-
-
-inline unsigned char GET_IMAGE_PIXEL(IplImage *pImage, CvPoint p)
-{
-	return *(pImage->imageData + p.x + (p.y * pImage->widthStep));
-}
-
-inline bool GET_IMAGEMASK_PIXEL(IplImage* pMask, CvPoint p)
-{
-	if (pMask == NULL)
+	if (maskImage.empty())
   {
     return true;
   }
-  return ((unsigned char)*(pMask->imageData + p.x + (p.y * pMask->widthStep))) > 0;
+  // @todo make this more generic so we can use any type and channel combo
+  // for our mask image
+  return maskImage.at<unsigned char>(point) > 0;
 }
 inline bool GET_BELOW_VISITEDPIXEL(bool* pCurrentPixel, int imageWidth)
 {
@@ -61,25 +33,20 @@ inline bool GET_BELOW_VISITEDPIXEL(bool* pCurrentPixel, int imageWidth)
    - DATA DE CREACIÓ: 2008/04/29
    - MODIFICACIÓ: Data. Autor. Descripció.
 */
-inline void ASSIGN_LABEL(CvPoint p,
+inline void ASSIGN_LABEL(const cv::Point& point,
                          cvblobs::LabelType* pLabels,
                          int imageWidth,
                          int newLabel)
 {
-	*(pLabels + p.y * imageWidth + p.x) = newLabel;
+	*(pLabels + point.y * imageWidth + point.x) = newLabel;
 }
 
 
-inline void ASSIGN_VISITED(CvPoint p,
+inline void ASSIGN_VISITED(const cv::Point& point,
                            bool* pVisitedPoints,
                            int imageWidth)
 {
-	*(pVisitedPoints + p.y * imageWidth + p.x) = true;
-}
-
-inline unsigned char* rowPtr(IplImage* pImage, int row)
-{
-  return (unsigned char*) pImage->imageData + (row * pImage->widthStep);
+	*(pVisitedPoints + point.y * imageWidth + point.x) = true;
 }
 
 } // end anonymous namespace
@@ -103,8 +70,8 @@ CVBLOBS_BEGIN_NAMESPACE
    - NOTA: Algorithm based on "A linear-time component labeling algorithm using contour tracing technique", 
    F.Chang et al
 */
-bool ComponentLabeling(IplImage* pInputImage,
-                       IplImage* pMaskImage,
+bool ComponentLabeling(cv::Mat& inputImage,
+                       cv::Mat& maskImage,
                        unsigned char backgroundColor,
                        BlobContainer& blobs)
 {
@@ -117,7 +84,7 @@ bool ComponentLabeling(IplImage* pInputImage,
   unsigned char* p_below_input_image_iter = NULL;
 
   // pointers into the mask image
-  unsigned char* p_mask_iter = NULL;
+  unsigned char* p_mask_iter       = NULL;
   unsigned char* p_above_mask_iter = NULL;
   unsigned char* p_below_mask_iter = NULL;
   
@@ -126,33 +93,30 @@ bool ComponentLabeling(IplImage* pInputImage,
   cv::Point current_point;
 
 	// verify input image
-  if (!CV_IS_IMAGE(pInputImage))
+  if (inputImage.empty())
   {
 		return false;
   }
 
+  const cv::Size image_size = inputImage.size();
+  const cv::Size mask_size  = maskImage.size();
+  
 	// verify that input image and mask image has same size
-	if (pMaskImage != NULL)
+	if (!maskImage.empty())
 	{
-		if (!CV_IS_IMAGE(pMaskImage) || 
-        pMaskImage->width != pInputImage->width || 
-        pMaskImage->height != pInputImage->height)
+		if (mask_size != image_size)
     {
       return false;
     }
 	}
 	else
 	{
-		p_mask_iter = NULL;
+		p_mask_iter       = NULL;
 		p_above_mask_iter = NULL;
 		p_below_mask_iter = NULL;
 	}
 
-	const cv::Size image_sizes = cvSize(pInputImage->width, pInputImage->height);
-	const int image_width  = pInputImage->width;
-	const int image_height = pInputImage->height;
-
-  const int num_pixels = pInputImage->width * pInputImage->height;
+  const int num_pixels = image_size.width * image_size.height;
   
 	// row major vector with labelled image (deleted at end of function)
 	LabelType* p_labels = new LabelType[num_pixels];
@@ -168,24 +132,24 @@ bool ComponentLabeling(IplImage* pInputImage,
   int current_label = 1;
   int contour_label = 0;
 
-	for (int row = 0; row < image_height; ++row)
+	for (int row = 0; row < image_size.height; ++row)
 	{
 		// don't verify if we area on first or last row,
     // it will verified on pointer access
-		p_input_image_iter       = rowPtr(pInputImage, row);
-		p_above_input_image_iter = rowPtr(pInputImage, row - 1);
-		p_below_input_image_iter = rowPtr(pInputImage, row + 1);
+		p_input_image_iter       = inputImage.ptr(row);
+		p_above_input_image_iter = inputImage.ptr(row - 1);
+		p_below_input_image_iter = inputImage.ptr(row + 1);
 
-		if (pMaskImage != NULL)
+		if (!maskImage.empty())
 		{
 			// don't verify if we area on first or last row,
       // it will verified on pointer access
-			p_mask_iter       = rowPtr(pMaskImage, row);
-			p_above_mask_iter = rowPtr(pMaskImage, row - 1);
-			p_below_mask_iter = rowPtr(pMaskImage, row + 1);
+			p_mask_iter       = maskImage.ptr(row);
+			p_above_mask_iter = maskImage.ptr(row - 1);
+			p_below_mask_iter = maskImage.ptr(row + 1);
 		}
 		
-		for (int col = 0; col < image_width; ++col,
+		for (int col = 0; col < image_size.width; ++col,
              ++p_input_image_iter,
              ++p_above_input_image_iter, ++p_below_input_image_iter,
              ++p_mask_iter,
@@ -193,8 +157,8 @@ bool ComponentLabeling(IplImage* pInputImage,
 		{
 			// ignore background pixels or 0 pixels in mask
 			if (*p_input_image_iter == backgroundColor ||
-           (pMaskImage != NULL &&
-            *p_mask_iter == 0 ))
+          (!maskImage.empty() &&
+           *p_mask_iter == 0 ))
 			{
 				++p_labels_iter;
 				++p_visited_points_iter;
@@ -204,9 +168,10 @@ bool ComponentLabeling(IplImage* pInputImage,
 			// new external contour: current label == 0 and above pixel is background
 			if (row > 0 )
 			{
-				b_external_contour = ((*p_above_input_image_iter == backgroundColor) || 
-                           (pMaskImage && *p_above_mask_iter == 0)) && 
-            (*p_labels_iter == 0);
+				b_external_contour = ( ((*p_above_input_image_iter == backgroundColor) || 
+                                (!maskImage.empty() &&
+                                 *p_above_mask_iter == 0)) && 
+                               (*p_labels_iter == 0));
 			}
 			else
       {
@@ -214,10 +179,10 @@ bool ComponentLabeling(IplImage* pInputImage,
       }
 
 			// new internal contour: below pixel is background and not visited
-			if (!b_external_contour && row < image_height - 1)
+			if (!b_external_contour && row < image_size.height - 1)
 			{
 				b_internal_contour = *p_below_input_image_iter == backgroundColor &&
-            !GET_BELOW_VISITEDPIXEL( p_visited_points_iter, image_width);
+            !GET_BELOW_VISITEDPIXEL( p_visited_points_iter, image_size.width);
 			}
 			else
 			{
@@ -227,17 +192,18 @@ bool ComponentLabeling(IplImage* pInputImage,
 			
 			if (b_external_contour)
 			{
-				current_point = cvPoint(col, row); // (x, y)
+				current_point = cv::Point(col, row); // (x, y)
 				// assign label to labelled image
 				*p_labels_iter = current_label;
 				
 				// create new blob
-				p_current_blob =
-            BlobPtrType( new Blob(current_label, current_point, image_sizes ) );
+				p_current_blob = BlobPtrType(new Blob(current_label,
+                                              current_point,
+                                              image_size));
 
 				// contour tracing with current_label
-				contourTracing(pInputImage,
-                       pMaskImage,
+				contourTracing(inputImage,
+                       maskImage,
                        current_point, 
                        p_labels,
                        p_visited_points, 
@@ -255,7 +221,7 @@ bool ComponentLabeling(IplImage* pInputImage,
 			{
 				if (b_internal_contour)
 				{
-          current_point = cvPoint(col, row); // (x, y)
+          current_point = cv::Point(col, row); // (x, y)
 
 					if (*p_labels_iter == 0)
 					{
@@ -276,8 +242,8 @@ bool ComponentLabeling(IplImage* pInputImage,
 						BlobContour new_contour(current_point);
 						
 						// contour tracing with contour_label
-						contourTracing(pInputImage,
-                           pMaskImage,
+						contourTracing(inputImage,
+                           maskImage,
                            current_point,
                            p_labels,
                            p_visited_points,
@@ -329,8 +295,8 @@ bool ComponentLabeling(IplImage* pInputImage,
    - DATA DE CREACIÓ: 2008/04/29
    - MODIFICACIÓ: Data. Autor. Descripció.
 */
-void contourTracing(IplImage* pImage,
-                    IplImage* pMaskImage,
+void contourTracing(cv::Mat& inputImage,
+                    cv::Mat& maskImage,
                     cv::Point contourStart,
                     LabelType* pLabels,
                     bool* pVisitedPoints,
@@ -350,20 +316,22 @@ void contourTracing(IplImage* pImage,
 		initial_movement = CHAIN_CODE_UP_LEFT; // old value: 7;
 	}
 
-  cv::Point tsecond = tracer(pImage,
-                             pMaskImage,
+  cv::Point tsecond = tracer(inputImage,
+                             maskImage,
                              contourStart,
                              pVisitedPoints,
                              initial_movement, 
                              backgroundColor,
                              movement); // out param
-	
+
+  
+  const cv::Size image_size = inputImage.size();
+  
 	// assign current label to tnext
-	ASSIGN_LABEL( contourStart, pLabels, pImage->width, label );
+	ASSIGN_LABEL( contourStart, pLabels, image_size.width, label );
 	
 	// contour corresponds to isolated pixel? 
-	if (tsecond.x == contourStart.x &&
-      tsecond.y == contourStart.y)
+	if (tsecond == contourStart)
 	{
 		// we are finished with the contour
 		return;
@@ -373,27 +341,23 @@ void contourTracing(IplImage* pImage,
 	pCurrentBlobContour->addChainCode(movement);
 	
 	// assign label to next point 
-	ASSIGN_LABEL( tsecond, pLabels, pImage->width, label );
+	ASSIGN_LABEL( tsecond, pLabels, image_size.width, label );
 	
   cv::Point t     = tsecond;
   cv::Point tnext = tsecond;
 	
 	// while T is different than contourStart and Tnext is different than T
 	// follow contour until start point is reached again
-	while (t.x != contourStart.x ||
-         t.y != contourStart.y || 
-         tsecond.x != tnext.x ||
-         tsecond.y != tnext.y)
+	while (t != contourStart ||
+         tsecond != tnext)
 	{
 		
-		t.x = tnext.x;
-		t.y = tnext.y;
-    // @todo remove nasty enum casts
+		t = tnext;
 		initial_movement = (ChainCode) (((int)movement + 5) % 8);
     
 		// search for next contour point
-		tnext = tracer(pImage,
-                   pMaskImage,
+		tnext = tracer(inputImage,
+                   maskImage,
                    t,
                    pVisitedPoints,
                    initial_movement, 
@@ -401,7 +365,7 @@ void contourTracing(IplImage* pImage,
                    movement); // out param
 		
 		// assign label to contour point
-		ASSIGN_LABEL( tnext, pLabels, pImage->width, label );
+		ASSIGN_LABEL( tnext, pLabels, image_size.width, label );
 
 		// add chain code to current contour
 		pCurrentBlobContour->addChainCode(movement);
@@ -421,8 +385,8 @@ void contourTracing(IplImage* pImage,
    - DATA DE CREACIÓ: 2008/04/30
    - MODIFICACIÓ: Data. Autor. Descripció.
 */
-cv::Point tracer(IplImage* pImage,
-                 IplImage* pMaskImage,
+cv::Point tracer(cv::Mat& inputImage,
+                 cv::Mat& maskImage,
                  cv::Point point,
                  bool* pVisitedPoints,
                  ChainCode initialMovement,
@@ -431,6 +395,8 @@ cv::Point tracer(IplImage* pImage,
 {
 	int d;
   cv::Point next_point;
+
+  const cv::Size image_size = inputImage.size();
 	
 	for (d = 0; d <= 7; d++ )
 	{
@@ -439,23 +405,24 @@ cv::Point tracer(IplImage* pImage,
     next_point = movePoint(point, movement);
 
 		// the point is inside image ?
-		if (next_point.x < 0 || next_point.x >= pImage->width || 
-        next_point.y < 0 || next_point.y >= pImage->height)
+		if (next_point.x < 0 || next_point.x >= image_size.width || 
+        next_point.y < 0 || next_point.y >= image_size.height)
 		{
 			// try other movement
 			continue;
 		}
     
 		// image has blobColor value in the new point?
-		if (GET_IMAGE_PIXEL(pImage, next_point) != backgroundColor &&
-        GET_IMAGEMASK_PIXEL(pMaskImage, next_point))
+    // @todo support any type/depth combo 
+		if (inputImage.at<unsigned char>(next_point) != backgroundColor &&
+        GET_IMAGEMASK_PIXEL(maskImage, next_point))
 		{
 			return next_point;
 		}
 		else
 		{
 			// mark point as visited
-			ASSIGN_VISITED(next_point, pVisitedPoints, pImage->width);
+			ASSIGN_VISITED(next_point, pVisitedPoints, image_size.width);
 		}
 	}
 
