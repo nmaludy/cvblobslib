@@ -1,7 +1,8 @@
 /**
  * @brief Header that formward declares all objects and typedefs in this
  *        library
- * @author N. Maludy
+ * @author Ricard Borràs
+ * @author Nick Maludy <nmaludy@gmail.com>
  * @date 01/02/2014
  */
 #ifndef _CVBLOBS2_BLOBFWD_H_

@@ -1,7 +1,8 @@
 /**
  * @brief ComponentLabeling functions to perform the connected compoents
  * labelling (ie blobbing).
- * @author N. Maludy
+ * @author Ricard Borràs
+ * @author Nick Maludy <nmaludy@gmail.com>
  * @date 03/15/2014
  */
 #ifndef _CVBLOBS2_COMPONENTLABELING_H_

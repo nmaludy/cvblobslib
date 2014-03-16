@@ -1,3 +1,7 @@
+/**
+ * @author Nick Maludy <nmaludy@gmail.com>
+ * @date 03/16/2014
+ */
 #include <cvblobs2/SpatialMoments.h>
 #include <opencv2/imgproc/imgproc.hpp>
 

@@ -1,10 +1,3 @@
-/**
- * @brief Functors for using blobs with std lib containers and the BlobResult
- * filtering functions.
- * @author Ricard Borràs
- * @author Nick Maludy <nmaludy@gmail.com>
- * @date 03/15/2014
- */
 #ifndef _CVBLOBS2_BLOBOPERATORS_H_
 #define _CVBLOBS2_BLOBOPERATORS_H_
 
@@ -20,7 +13,7 @@
 CVBLOBS_BEGIN_NAMESPACE
 
 /**
- * @class BlobOperators
+ * @class BlobOperator
  * @brief Functor interface for operating on Blob's in an efficient manner.
  * All functors inherit from the abstract BlobOperator class.
  * Sub-classes of BlobOperator MUST implement the name() and
@@ -28,6 +21,9 @@ CVBLOBS_BEGIN_NAMESPACE
  * the name of the operation and must be unique with respect to all other
  * BlobOperator sub-classes. The double operator()(cv::Ptr<Blob>) function
  * is the actual operation function that does the work.
+ * @author Ricard Borràs
+ * @author Nick Maludy <nmaludy@gmail.com>
+ * @date 03/15/2014
  */
 class BlobOperator
 {

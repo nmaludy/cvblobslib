@@ -1,17 +1,3 @@
-/************************************************************************
-  			BlobResult.h
-  			
-FUNCIONALITAT: Definició de la classe CBlobResult
-AUTOR: Inspecta S.L.
-MODIFICACIONS (Modificació, Autor, Data):
-
-FUNCTIONALITY: Definition of the CBlobResult class
-AUTHOR: Inspecta S.L.
-MODIFICATIONS (Modification, Author, Date):
-
-**************************************************************************/
-
-
 #ifndef _CVBLOBS2_BLOBRESULT_H_
 #define _CVBLOBS2_BLOBRESULT_H_
 
@@ -20,17 +6,15 @@ MODIFICATIONS (Modification, Author, Date):
 
 CVBLOBS_BEGIN_NAMESPACE
 
-/**************************************************************************
-	Excepcions / Exceptions
-**************************************************************************/
-
-/** 
-    Classe que conté un conjunt de blobs i permet extreure'n propietats 
-    o filtrar-los segons determinats criteris.
-    Class to calculate the blobs of an image and calculate some properties 
-    on them. Also, the class provides functions to filter the blobs using
-    some criteria.
-*/
+/**
+ * @class BlobResult
+ * @brief Class to calculate the blobs of an image and calculate some properties
+ * on them. Also, the class provides functions to filter the blobs using
+ * some criteria.
+ * @author Ricard Borràs
+ * @author Nick Maludy <nmaludy@gmail.com>
+ * @date 03/16/2014
+ */
 class BlobResult  
 {
  public:

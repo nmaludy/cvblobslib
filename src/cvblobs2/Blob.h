@@ -1,10 +1,3 @@
-/**
- * @class Blob
- * @brief Implementation of the Blob class and some helper classes to perform
- * some calculations on it
- * @author N. Maludy
- * @date 12/30/2013
- */
 #ifndef _CVBLOBS2_BLOB_H_
 #define _CVBLOBS2_BLOB_H_
 
@@ -21,6 +14,14 @@
 
 CVBLOBS_BEGIN_NAMESPACE
 
+/**
+ * @class Blob
+ * @brief Implementation of the Blob class and some helper classes to perform
+ * some calculations on it
+ * @author Ricard Borràs
+ * @author Nick Maludy <nmaludy@gmail.com>
+ * @date 12/30/2013
+ */
 class Blob
 {
  public:

@@ -1,3 +1,8 @@
+/**
+ * @brief @todo
+ * @author Nick Maludy <nmaludy@gmail.com>
+ * @date 03/16/2014
+ */
 #ifndef _CVBLOBS2_SPATIALMOMENTS_H_
 #define _CVBLOBS2_SPATIALMOMENTS_H_
 

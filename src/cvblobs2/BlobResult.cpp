@@ -1,12 +1,8 @@
-
-/************************************************************************
-  			BlobResult.cpp
-  			
-FUNCIONALITAT: Implementació de la classe BlobResult
-AUTOR: Inspecta S.L.
-MODIFICACIONS (Modificació, Autor, Data):
- 
-**************************************************************************/
+/**
+ * @author Ricard Borràs
+ * @author Nick Maludy <nmaludy@gmail.com>
+ * @date 03/16/2014
+ */
 #include <cvblobs2/BlobResult.h>
 
 #include <limits.h>
@@ -19,33 +15,6 @@ MODIFICACIONS (Modificació, Autor, Data):
 
 CVBLOBS_BEGIN_NAMESPACE
 
-/**************************************************************************
-		Constructors / Destructors
-**************************************************************************/
-
-
-/**
-- FUNCIÓ: BlobResult
-- FUNCIONALITAT: Constructor estandard.
-- PARÀMETRES:
-- RESULTAT:
-- Crea un BlobResult sense cap blob
-- RESTRICCIONS:
-- AUTOR: Ricard Borràs
-- DATA DE CREACIÓ: 20-07-2004.
-- MODIFICACIÓ: Data. Autor. Descripció.
-*/
-/**
-- FUNCTION: BlobResult
-- FUNCTIONALITY: Standard constructor
-- PARAMETERS:
-- RESULT:
-	- creates an empty set of blobs
-- RESTRICTIONS:
-- AUTHOR: Ricard Borràs
-- CREATION DATE: 25-05-2005.
-- MODIFICATION: Date. Author. Description.
-*/
 BlobResult::BlobResult()
     : mBlobs()
 {}

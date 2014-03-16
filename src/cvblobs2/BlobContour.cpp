@@ -1,3 +1,8 @@
+/**
+ * @author Ricard Borràs
+ * @author Nick Maludy <nmaludy@gmail.com>
+ * @date 12/31/2013
+ */
 #include <cvblobs2/BlobContour.h>
 
 #include <cvblobs2/ChainCode.h>

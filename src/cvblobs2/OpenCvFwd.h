@@ -1,6 +1,6 @@
 /**
  * @brief Header that formward declares common OpenCV types used by this library
- * @author N. Maludy
+ * @author Nick Maludy <nmaludy@gmail.com>
  * @date 01/27/2014
  */
 #ifndef _CVBLOBS2_OPENCVFWD_H_

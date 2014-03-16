@@ -1,7 +1,13 @@
+#ifndef _CVBLOBS2_CHAINCODE_H_
+#define _CVBLOBS2_CHAINCODE_H_
+
+#include <cvblobs2/CvBlobsDefs.h>
+#include <cvblobs2/OpenCvFwd.h>
+
+CVBLOBS_BEGIN_NAMESPACE
+
 /**
- * Copyright (c) 2014 SilverBlock Systems, Inc. ALL RIGHTS RESERVED.
- * 
- * @class ChainCode
+ * @enum ChainCode
  * @brief
  * Conversion from freeman code to coordinate increments (counterclockwise)
  * coordinates are in {x, y} offsets relative to the current pixel
@@ -14,18 +20,10 @@
    5  6  7
  @endcode
  *
- * @todo operator overloads for point chaincode operations
- * @author N. Maludy
+ * @todo operator overloads for cv::Point <-> ChainCode operations
+ * @author Nick Maludy <nmaludy@gmail.com>
  * @date 01/21/2014
  */
-#ifndef _CVBLOBS2_CHAINCODE_H_
-#define _CVBLOBS2_CHAINCODE_H_
-
-#include <cvblobs2/CvBlobsDefs.h>
-#include <cvblobs2/OpenCvFwd.h>
-
-CVBLOBS_BEGIN_NAMESPACE
-
 enum ChainCode
 {
   CHAIN_CODE_INVALID    = -1,

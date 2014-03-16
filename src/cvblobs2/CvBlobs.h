@@ -1,6 +1,6 @@
 /**
  * @brief Universal include header that includes all headers for this library.
- * @author N. Maludy
+ * @author Nick Maludy <nmaludy@gmail.com>
  * @date 01/02/2014
  */
 #ifndef _CVBLOBS2_CVBLOBS_H_

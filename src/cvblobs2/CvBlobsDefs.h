@@ -1,6 +1,6 @@
 /**
  * @brief Header that declares all #defines for the library
- * @author N. Maludy
+ * @author Nick Maludy <nmaludy@gmail.com>
  * @date 01/02/2014
  */
 #ifndef _CVBLOBS2_CVBLOBSDEFS_H_

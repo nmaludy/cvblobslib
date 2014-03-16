@@ -1,5 +1,6 @@
 /**
- * @author N. Maludy
+ * @author Ricard Borràs
+ * @author Nick Maludy <nmaludy@gmail.com>
  * @date 12/30/2013
  */
 #include <cvblobs2/Blob.h>

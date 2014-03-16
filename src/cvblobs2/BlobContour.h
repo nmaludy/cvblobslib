@@ -1,11 +1,3 @@
-/**
- * Copyright (c) 2013 SilverBlock Systems, Inc. ALL RIGHTS RESERVED.
- * 
- * @class BlobContour
- * @brief 
- * @author N. Maludy
- * @date 12/31/2013
- */
 #ifndef _CVBLOBS2_BLOBCONTOUR_H_
 #define _CVBLOBS2_BLOBCONTOUR_H_
 
@@ -15,7 +7,13 @@
 
 CVBLOBS_BEGIN_NAMESPACE
 
-//! Blob contour class (in crack code)
+/**
+ * @class BlobContour
+ * @brief Blob contour class (in crack code)
+ * @author Ricard Borràs
+ * @author Nick Maludy <nmaludy@gmail.com>
+ * @date 12/31/2013
+ */
 class BlobContour
 {
 	friend class Blob;

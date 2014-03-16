@@ -1,3 +1,8 @@
+/**
+ * @author Ricard Borràs
+ * @author Nick Maludy <nmaludy@gmail.com>
+ * @date 01/21/2014
+ */
 #include <cvblobs2/ChainCode.h>
 
 #include <opencv2/core/core.hpp>

@@ -1,5 +1,6 @@
 /**
- * @author N. Maludy
+ * @author Ricard Borràs
+ * @author Nick Maludy <nmaludy@gmail.com>
  * @date 03/15/2014
  */
 #include <cvblobs2/ComponentLabeling.h>
@@ -307,7 +308,7 @@ void contourTracing(const cv::Mat& inputImage,
                     LabelType label,
                     bool bInternalContour,
                     unsigned char backgroundColor,
-                    BlobContour* pCurrentBlobContour)
+                    cv::Ptr<BlobContour> pCurrentBlobContour)
 {
   ChainCode movement = CHAIN_CODE_RIGHT;
 	ChainCode initial_movement = CHAIN_CODE_RIGHT;
