@@ -1,7 +1,11 @@
+/**
+ * @author N. Maludy
+ * @date 03/15/2014
+ */
 #include <cvblobs2/ComponentLabeling.h>
 
-#include <cvblobs2/counted_ptr.h>
 #include <cvblobs2/Blob.h>
+#include <cvblobs2/BlobContour.h>
 
 namespace {
 
@@ -70,26 +74,26 @@ CVBLOBS_BEGIN_NAMESPACE
    - NOTA: Algorithm based on "A linear-time component labeling algorithm using contour tracing technique", 
    F.Chang et al
 */
-bool ComponentLabeling(cv::Mat& inputImage,
-                       cv::Mat& maskImage,
+bool ComponentLabeling(const cv::Mat& inputImage,
+                       const cv::Mat& maskImage,
                        unsigned char backgroundColor,
-                       BlobContainer& blobs)
+                       BlobContainerType& blobs)
 {
   bool b_internal_contour = false;
   bool b_external_contour = false;
 
   // pointers into the input image
-	unsigned char* p_input_image_iter       = NULL;
-  unsigned char* p_above_input_image_iter = NULL;
-  unsigned char* p_below_input_image_iter = NULL;
+	const unsigned char* p_input_image_iter       = NULL;
+  const unsigned char* p_above_input_image_iter = NULL;
+  const unsigned char* p_below_input_image_iter = NULL;
 
   // pointers into the mask image
-  unsigned char* p_mask_iter       = NULL;
-  unsigned char* p_above_mask_iter = NULL;
-  unsigned char* p_below_mask_iter = NULL;
+  const unsigned char* p_mask_iter       = NULL;
+  const unsigned char* p_above_mask_iter = NULL;
+  const unsigned char* p_below_mask_iter = NULL;
   
   //! current blob pointer
-  BlobPtrType p_current_blob;
+  cv::Ptr<Blob> p_current_blob;
   cv::Point current_point;
 
 	// verify input image
@@ -197,10 +201,10 @@ bool ComponentLabeling(cv::Mat& inputImage,
 				*p_labels_iter = current_label;
 				
 				// create new blob
-				p_current_blob = BlobPtrType(new Blob(current_label,
-                                              current_point,
-                                              image_size));
-
+				p_current_blob = cv::Ptr<Blob>(new Blob(current_label,
+                                                current_point,
+                                                image_size));
+        
 				// contour tracing with current_label
 				contourTracing(inputImage,
                        maskImage,
@@ -239,7 +243,7 @@ bool ComponentLabeling(cv::Mat& inputImage,
 					if (contour_label > 0)
 					{
 						p_current_blob = blobs[contour_label - 1];
-						BlobContour new_contour(current_point);
+            cv::Ptr<BlobContour> p_new_contour(new BlobContour(current_point));
 						
 						// contour tracing with contour_label
 						contourTracing(inputImage,
@@ -250,10 +254,10 @@ bool ComponentLabeling(cv::Mat& inputImage,
                            contour_label,
                            true,
                            backgroundColor,
-                           &new_contour); 
+                           p_new_contour); 
 
-						p_current_blob->addInternalContour(new_contour);
-					}
+						p_current_blob->addInternalContour(p_new_contour);
+					} // end if (contour_label > 0)
 				} // end if (b_internal_contour)
 				// neither internal nor external contour
 				else
@@ -269,8 +273,8 @@ bool ComponentLabeling(cv::Mat& inputImage,
 			
 			++p_labels_iter;
 			++p_visited_points_iter;
-		}
-	}
+		} // for each column in image
+	} // for each row in image
 
 
  	// free auxiliary buffers
@@ -295,9 +299,9 @@ bool ComponentLabeling(cv::Mat& inputImage,
    - DATA DE CREACIÓ: 2008/04/29
    - MODIFICACIÓ: Data. Autor. Descripció.
 */
-void contourTracing(cv::Mat& inputImage,
-                    cv::Mat& maskImage,
-                    cv::Point contourStart,
+void contourTracing(const cv::Mat& inputImage,
+                    const cv::Mat& maskImage,
+                    const cv::Point& contourStart,
                     LabelType* pLabels,
                     bool* pVisitedPoints,
                     LabelType label,
@@ -316,13 +320,13 @@ void contourTracing(cv::Mat& inputImage,
 		initial_movement = CHAIN_CODE_UP_LEFT; // old value: 7;
 	}
 
-  cv::Point tsecond = tracer(inputImage,
-                             maskImage,
-                             contourStart,
-                             pVisitedPoints,
-                             initial_movement, 
-                             backgroundColor,
-                             movement); // out param
+  const cv::Point tsecond = tracer(inputImage,
+                                   maskImage,
+                                   contourStart,
+                                   pVisitedPoints,
+                                   initial_movement, 
+                                   backgroundColor,
+                                   movement); // out param
 
   
   const cv::Size image_size = inputImage.size();
@@ -385,22 +389,21 @@ void contourTracing(cv::Mat& inputImage,
    - DATA DE CREACIÓ: 2008/04/30
    - MODIFICACIÓ: Data. Autor. Descripció.
 */
-cv::Point tracer(cv::Mat& inputImage,
-                 cv::Mat& maskImage,
-                 cv::Point point,
+cv::Point tracer(const cv::Mat& inputImage,
+                 const cv::Mat& maskImage,
+                 const cv::Point& point,
                  bool* pVisitedPoints,
                  ChainCode initialMovement,
                  unsigned char backgroundColor,
                  ChainCode& movement)
 {
-	int d;
   cv::Point next_point;
 
   const cv::Size image_size = inputImage.size();
 	
-	for (d = 0; d <= 7; d++ )
+	for (int direction = 0; direction <= 7; ++direction)
 	{
-		movement = (ChainCode) (((int)initialMovement + d) % 8);
+		movement = (ChainCode) (((int)initialMovement + direction) % 8);
 
     next_point = movePoint(point, movement);
 

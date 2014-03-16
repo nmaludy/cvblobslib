@@ -1,3 +1,9 @@
+/**
+ * @brief ComponentLabeling functions to perform the connected compoents
+ * labelling (ie blobbing).
+ * @author N. Maludy
+ * @date 03/15/2014
+ */
 #ifndef _CVBLOBS2_COMPONENTLABELING_H_
 #define _CVBLOBS2_COMPONENTLABELING_H_
 
@@ -6,25 +12,25 @@
 CVBLOBS_BEGIN_NAMESPACE
 
 //! Component labeling functionx
-bool ComponentLabeling(cv::Mat& inputImage,
-                       cv::Mat& maskImage,
+bool ComponentLabeling(const cv::Mat& inputImage,
+                       const cv::Mat& maskImage,
                        unsigned char backgroundColor,
-                       BlobContainer& blobs);
+                       BlobContainerType& blobs);
 
 //! Auxiliary functions
-void contourTracing(cv::Mat& inputImage,
-                    cv::Mat& maskImage,
-                    cv::Point contourStart,
+void contourTracing(const cv::Mat& inputImage,
+                    const cv::Mat& maskImage,
+                    const cv::Point& contourStart,
                     LabelType *labels, 
                     bool* pbVisitedPoints,
                     LabelType label,
                     bool bInternalContour,
                     unsigned char backgroundColor,
-                    BlobContour* pCurrentBlobContour);
+                    cv::Ptr<BlobContour> pCurrentBlobContour);
 
-cv::Point tracer(cv::Mat& inputImage,
-                 cv::Mat& maskImage,
-                 cv::Point P,
+cv::Point tracer(const cv::Mat& inputImage,
+                 const cv::Mat& maskImage,
+                 const cv::Point& point,
                  bool* pbVisitedPoints,
                  ChainCode initialMovement,
                  unsigned char backgroundColor,

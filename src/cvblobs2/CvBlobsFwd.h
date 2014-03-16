@@ -48,23 +48,21 @@ enum FilterCondition
 
 //! Type of chain codes
 typedef ChainCode ChainCodeType;
+
 //! Type of list of chain codes
-typedef std::list<ChainCodeType> ChainCodeContainer;
+typedef std::list<ChainCodeType> ChainCodeContainerType;
+
 //! Type of list of points
-typedef std::vector<cv::Point> PointContainer;
+typedef std::vector<cv::Point> PointContainerType;
 
 //! Type of labelled images
 typedef unsigned int LabelType;
-//! Type of a list of contours
-typedef std::list<BlobContour> ContourContainer;
 
-//! Shared pointer to blob
-// @todo change this to Blob* or std::shared_ptr<Blob>
-template <class X> class counted_ptr;
-typedef counted_ptr<Blob> BlobPtrType;
+//! Type of a list of contours
+typedef std::list<cv::Ptr<BlobContour> > ContourContainerType;
 
 //! Blob vector definition
-typedef std::vector<BlobPtrType> BlobContainer;
+typedef std::vector<cv::Ptr<Blob> > BlobContainerType;
 
 CVBLOBS_END_NAMESPACE
 

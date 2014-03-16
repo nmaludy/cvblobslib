@@ -3,46 +3,37 @@
  * @date 12/30/2013
  */
 #include <cvblobs2/Blob.h>
+#include <cvblobs2/BlobContour.h>
 #include <cvblobs2/BlobOperators.h>
 
 CVBLOBS_BEGIN_NAMESPACE
 
 Blob::Blob()
-    : mExternalContour(),
+    : mpExternalContour(new BlobContour()),
       mInternalContours(),
       mProperties(),
       mId(0),
-      mBoundingBox(-1, -1, -1, -1),
-      mOriginalImageSize(-1, -1)
+      mOriginalImageSize(std::numeric_limits<cv::Point::value_type>::min(),
+                         std::numeric_limits<cv::Point::value_type>::min())
 {}
 
 Blob::Blob(LabelType id,
            const cv::Point& startPoint,
            const cv::Size& originalImageSize)
-    : mExternalContour(startPoint),
+    : mpExternalContour(new BlobContour(startPoint)),
       mInternalContours(),
       mProperties(),
       mId(id),
-      mBoundingBox(-1, -1, -1, -1),
       mOriginalImageSize(originalImageSize)
 {}
 
 Blob::Blob(const Blob& source)
-    : mExternalContour(source.mExternalContour),
+    : mpExternalContour(source.mpExternalContour),
       mInternalContours(source.mInternalContours),
       mProperties(source.mProperties),
       mId(source.mId),
-      mBoundingBox(source.mBoundingBox),
       mOriginalImageSize(source.mOriginalImageSize)
 {}
-
-Blob::Blob(Blob* pSource)
-{
-	if (pSource != NULL)
-	{
-		*this = *pSource;
-	}
-}
 
 Blob::~Blob()
 {
@@ -63,32 +54,30 @@ Blob& Blob::operator=(const Blob& source)
 //! swaps contents of this blob with other
 void Blob::swap(Blob& other)
 {
-  std::swap(mExternalContour,   other.mExternalContour);
+  std::swap(mpExternalContour,  other.mpExternalContour);
   std::swap(mInternalContours,  other.mInternalContours);
   std::swap(mProperties,        other.mProperties);
   std::swap(mId,                other.mId);
-  std::swap(mBoundingBox,       other.mBoundingBox);
   std::swap(mOriginalImageSize, other.mOriginalImageSize);
 }
 
-void Blob::clearContours()
+void Blob::clear()
 {
-  ContourContainer::iterator end_iter = mInternalContours.end();
-	for (ContourContainer::iterator iter = mInternalContours.begin();
+  ContourContainerType::iterator end_iter = mInternalContours.end();
+	for (ContourContainerType::iterator iter = mInternalContours.begin();
        iter != end_iter;
        ++iter)
 	{
-		iter->resetChainCode();
+		(*iter)->clear();
 	}	
 	mInternalContours.clear();
-	mExternalContour.resetChainCode();
-  
+	mpExternalContour->clear();
   mProperties.clear();
-  mBoundingBox = cv::Rect(-1, -1, -1, -1);
 }
-void Blob::addInternalContour(const BlobContour& newContour)
+
+void Blob::addInternalContour(cv::Ptr<BlobContour> pInternalContour)
 {
-	mInternalContours.push_back(newContour);
+	mInternalContours.push_back(pInternalContour);
 }
 
 //! Indica si el blob està buit ( no té cap info associada )
@@ -114,15 +103,15 @@ bool Blob::isEmpty()
 double Blob::area()
 {
   // total area of external contour
-	double area = mExternalContour.area();
+	double area = mpExternalContour->area();
 
   // minus all of the internal contours
-  ContourContainer::iterator end_iter = mInternalContours.end();
-	for (ContourContainer::iterator iter = mInternalContours.begin();
+  ContourContainerType::iterator end_iter = mInternalContours.end();
+	for (ContourContainerType::iterator iter = mInternalContours.begin();
        iter != end_iter;
        ++iter)
 	{
-		area -= iter->area();
+		area -= (*iter)->area();
 	}
 	return area;
 }
@@ -143,15 +132,15 @@ double Blob::area()
 double Blob::perimeter()
 {
   // perimeter of external contour
-	double perimeter = mExternalContour.perimeter();
+	double perimeter = mpExternalContour->perimeter();
 
   // plus perimeter of all internal contours
-  ContourContainer::iterator end_iter = mInternalContours.end();
-	for (ContourContainer::iterator iter = mInternalContours.begin();
+  ContourContainerType::iterator end_iter = mInternalContours.end();
+	for (ContourContainerType::iterator iter = mInternalContours.begin();
        iter != end_iter;
        ++iter)
 	{
-		perimeter += iter->perimeter();
+		perimeter += (*iter)->perimeter();
 	}
 	return perimeter;
 }
@@ -217,7 +206,7 @@ double Blob::externPerimeter(cv::Mat& mask,
 	double extern_perimeter = 0.0;
 	
 	// get contour pixels
-	const PointContainer& extern_contour = mExternalContour.contourPoints();
+	const PointContainerType& extern_contour = mpExternalContour->contourPoints();
 
 	// there are contour pixels?
 	if (extern_contour.empty())
@@ -231,11 +220,11 @@ double Blob::externPerimeter(cv::Mat& mask,
   // this must be a std::vector for use with cv::arcLength
   std::vector<cv::Point> external_points;
   external_points.reserve(extern_contour.size());
-	previous_point.x = -1;
+	previous_point.x = std::numeric_limits<cv::Point::value_type>::min();
 
 	// which contour pixels touch border?
-  PointContainer::const_iterator end_iter = extern_contour.end();
-	for (PointContainer::const_iterator iter = extern_contour.begin();
+  PointContainerType::const_iterator end_iter = extern_contour.end();
+	for (PointContainerType::const_iterator iter = extern_contour.begin();
        iter != end_iter;
        ++iter)
 	{
@@ -318,7 +307,7 @@ double Blob::externPerimeter(cv::Mat& mask,
 				
 				external_points.clear();
 				delta = 0;
-				previous_point.x = -1;
+				previous_point.x = std::numeric_limits<cv::Point::value_type>::min();
 			}
 
 			external_points.push_back(actual_point);
@@ -344,15 +333,15 @@ double Blob::externPerimeter(cv::Mat& mask,
 double Blob::moment(int p, int q)
 {
   // external moment
-	double moment = mExternalContour.moment(p,q);
+	double moment = mpExternalContour->moment(p,q);
 
   // minus all of the internal moments
-	ContourContainer::iterator end_iter = mInternalContours.end();
-	for (ContourContainer::iterator iter = mInternalContours.begin();
+	ContourContainerType::iterator end_iter = mInternalContours.end();
+	for (ContourContainerType::iterator iter = mInternalContours.begin();
        iter != end_iter;
        ++iter)
 	{
-		moment -= iter->moment(p,q);
+		moment -= (*iter)->moment(p,q);
 	}
 	return moment;
 }
@@ -396,13 +385,13 @@ double Blob::stdDev(cv::Mat& image)
 void Blob::meanAndStdDev(cv::Mat& image, double& mean, double& stddev)
 {
  	// Create a mask with same size as blob bounding box
-	boundingBox();
+  cv::Rect bounding_box = boundingBox();
 
-	if (mBoundingBox.height <= 0 ||
-      mBoundingBox.width <= 0 ||
+	if (bounding_box.height <= 0 ||
+      bounding_box.width <= 0 ||
       image.empty() ||
-      mBoundingBox.height > image.size().height ||
-      mBoundingBox.width > image.size().width)
+      bounding_box.height > image.size().height ||
+      bounding_box.width > image.size().width)
 	{
 		mean = 0.0;
 		stddev = 0.0;
@@ -412,14 +401,17 @@ void Blob::meanAndStdDev(cv::Mat& image, double& mean, double& stddev)
   cv::Point offset;
 
 	// apply ROI and mask to input image to compute mean gray and standard deviation
-  cv::Mat mask = cv::Mat::zeros(mBoundingBox.size(), CV_8UC1);
+  cv::Mat mask = cv::Mat::zeros(bounding_box.size(), CV_8UC1);
 
-	offset.x = -mBoundingBox.x;
-	offset.y = -mBoundingBox.y;
+	offset.x = -bounding_box.x;
+	offset.y = -bounding_box.y;
 
+  std::vector<cv::Mat> contours(1);
+  contours[0] = cv::Mat(mpExternalContour->contourPoints(), false);
+  
 	// draw contours on mask
   cv::drawContours(mask,
-                   mExternalContour.contourPoints(),
+                   contours,
                    -1, // draw all contours
                    cv::Scalar(255, 255, 255), // fill color
                    CV_FILLED,     // thickness
@@ -429,14 +421,15 @@ void Blob::meanAndStdDev(cv::Mat& image, double& mean, double& stddev)
                    offset);       // offset to shift each point
 
 	// draw internal contours
-  ContourContainer::iterator end_iter = mInternalContours.end();
-	for (ContourContainer::iterator iter = mInternalContours.begin();
+  ContourContainerType::iterator end_iter = mInternalContours.end();
+	for (ContourContainerType::iterator iter = mInternalContours.begin();
        iter != end_iter;
        ++iter)
 	{
-    const PointContainer& contour_points = iter->contourPoints();
+    const PointContainerType& contour_points = (*iter)->contourPoints();
+    contours[0] = cv::Mat(contour_points, false);
     cv::drawContours(mask,
-                     contour_points,
+                     contours,
                      -1, // draw all contours
                      cv::Scalar(0, 0, 0), // fill color
                      CV_FILLED,     // thickness
@@ -447,7 +440,7 @@ void Blob::meanAndStdDev(cv::Mat& image, double& mean, double& stddev)
 	}
 
   // extracts ROI from image
-  cv::Mat roi = image(mBoundingBox);
+  cv::Mat roi = image(bounding_box);
   
   cv::Scalar meanscalar;
   cv::Scalar stdscalar;
@@ -470,33 +463,9 @@ void Blob::meanAndStdDev(cv::Mat& image, double& mean, double& stddev)
    - DATA DE CREACIÓ: 2008/05/06
    - MODIFICACIÓ: Data. Autor. Descripció.
 */
-const cv::Rect& Blob::boundingBox()
+cv::Rect Blob::boundingBox()
 {
-	// it is calculated?
-  /*	if( m_boundingBox.width != -1 )
-      {
-      return m_boundingBox;
-      }
-  */
-  
-	// get contour pixels
-	const PointContainer& extern_contour = mExternalContour.contourPoints();
-	
-	// it is an empty blob?
-	if (extern_contour.empty())
-	{
-		mBoundingBox.x = 0;
-		mBoundingBox.y = 0;
-		mBoundingBox.width = 0;
-		mBoundingBox.height = 0;
-
-		return mBoundingBox;
-	}
-
-  // @todo investigate if we can just return this for all calls
-  // specifically why the above sets to 0's instead of -1 in other places
-	mBoundingBox = mExternalContour.boundingBox();
-	return mBoundingBox;
+	return mpExternalContour->boundingBox();
 }
 
 /**
@@ -627,8 +596,12 @@ cv::RotatedRect Blob::ellipse()
 */
 void Blob::fillBlob(cv::Mat& image, const cv::Scalar& color) 					  
 {
+  const PointContainerType& contour_points = mpExternalContour->contourPoints();
+  
+  std::vector<cv::Mat> contours(1);
+  contours[0] = cv::Mat(contour_points, false);
   cv::drawContours(image,
-                   mExternalContour.contourPoints(),
+                   contours,
                    -1,            // draw all contours
                    color,         // fill color
                    CV_FILLED,     // thickness
@@ -650,9 +623,9 @@ void Blob::fillBlob(cv::Mat& image, const cv::Scalar& color)
    - CREATION DATE: 25-05-2005.
    - MODIFICATION: Date. Author. Description.
 */
-void Blob::convexHull(PointContainer& hull)
+void Blob::convexHull(PointContainerType& hull)
 {
-  const PointContainer& contour_points = mExternalContour.contourPoints();
+  const PointContainerType& contour_points = mpExternalContour->contourPoints();
 	if (contour_points.empty())
   {
     cv::convexHull(contour_points,
@@ -676,8 +649,8 @@ void Blob::convexHull(PointContainer& hull)
 void Blob::joinBlob(const Blob& blob)
 {
   // @todo proper set join implementation
-  ChainCodeContainer& contour = mExternalContour.mContour;
-  const ChainCodeContainer& src_contour = blob.mExternalContour.mContour;
+  ChainCodeContainerType& contour = mpExternalContour->mContour;
+  const ChainCodeContainerType& src_contour = blob.mpExternalContour->mContour;
   contour.insert(contour.end(), src_contour.begin(), src_contour.end());
 
 	// reset stats for the blob
@@ -685,3 +658,12 @@ void Blob::joinBlob(const Blob& blob)
 }
 
 CVBLOBS_END_NAMESPACE
+
+namespace std {
+template<>
+void swap(cvblobs::Blob& lhs, cvblobs::Blob& rhs)
+{
+  lhs.swap(rhs);
+}
+} // namespace std
+

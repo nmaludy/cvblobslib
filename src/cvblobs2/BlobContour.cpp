@@ -3,30 +3,39 @@
 #include <cvblobs2/ChainCode.h>
 #include <cvblobs2/SpatialMoments.h>
 
+#include <limits>
+
 CVBLOBS_BEGIN_NAMESPACE
 
 BlobContour::BlobContour()
     : mContour(),
-      mStartPoint(-1, -1),
+      mStartPoint(std::numeric_limits<cv::Point::value_type>::min(),
+                  std::numeric_limits<cv::Point::value_type>::min()),
       mContourPoints(),
-      mArea(-1),
-      mPerimeter(-1),
+      mArea(std::numeric_limits<cv::Point::value_type>::min()),
+      mPerimeter(std::numeric_limits<cv::Point::value_type>::min()),
       mMoments(),
-      mBoundingBox(-1, -1, -1, -1)
+      mBoundingBox(std::numeric_limits<cv::Point::value_type>::min(),
+                   std::numeric_limits<cv::Point::value_type>::min(),
+                   std::numeric_limits<cv::Point::value_type>::min(),
+                   std::numeric_limits<cv::Point::value_type>::min())
 {
-	mMoments.m00 = -1;
+	mMoments.m00 = std::numeric_limits<cv::Point::value_type>::min();
 }
                
 BlobContour::BlobContour(const cv::Point& startPoint)
     : mContour(),
       mStartPoint(startPoint),
       mContourPoints(),
-      mArea(-1),
-      mPerimeter(-1),
+      mArea(std::numeric_limits<cv::Point::value_type>::min()),
+      mPerimeter(std::numeric_limits<cv::Point::value_type>::min()),
       mMoments(),
-      mBoundingBox(-1, -1, -1, -1)
+      mBoundingBox(std::numeric_limits<cv::Point::value_type>::min(),
+                   std::numeric_limits<cv::Point::value_type>::min(),
+                   std::numeric_limits<cv::Point::value_type>::min(),
+                   std::numeric_limits<cv::Point::value_type>::min())
 {
-	mMoments.m00 = -1;
+	mMoments.m00 = std::numeric_limits<cv::Point::value_type>::min();
 }
 
 //! Copy constructor
@@ -93,18 +102,25 @@ void BlobContour::swap(BlobContour& other)
 void BlobContour::addChainCode(ChainCodeType chaincode)
 {
   mContour.push_back(chaincode);
+  mBoundingBox = cv::Rect(std::numeric_limits<cv::Point::value_type>::min(),
+                          std::numeric_limits<cv::Point::value_type>::min(),
+                          std::numeric_limits<cv::Point::value_type>::min(),
+                          std::numeric_limits<cv::Point::value_type>::min());
+  mContourPoints.clear();
 }
 
-//! Clears chain code contour and points
-void BlobContour::resetChainCode()
+void BlobContour::clear()
 {
 	mContour.clear();
   mContourPoints.clear();
-  mArea = -1;
-  mPerimeter = -1;
+  mArea = std::numeric_limits<cv::Point::value_type>::min();
+  mPerimeter = std::numeric_limits<cv::Point::value_type>::min();
   mMoments = cv::Moments();
-  mMoments.m00 = -1;
-  mBoundingBox = cv::Rect(-1, -1, -1, -1);
+  mMoments.m00 = std::numeric_limits<cv::Point::value_type>::min();
+  mBoundingBox = cv::Rect(std::numeric_limits<cv::Point::value_type>::min(),
+                          std::numeric_limits<cv::Point::value_type>::min(),
+                          std::numeric_limits<cv::Point::value_type>::min(),
+                          std::numeric_limits<cv::Point::value_type>::min());
 }
 
 /**
@@ -124,7 +140,7 @@ void BlobContour::resetChainCode()
 double BlobContour::perimeter()
 {
 	// is calculated?
-	if (mPerimeter != -1)
+	if (mPerimeter != std::numeric_limits<cv::Point::value_type>::min())
 	{
 		return mPerimeter;
 	}
@@ -155,7 +171,7 @@ double BlobContour::perimeter()
 double BlobContour::area()
 {
 	// is calculated?
-	if (mArea != -1)
+	if (mArea != std::numeric_limits<cv::Point::value_type>::min())
 	{
 		return mArea;
 	}
@@ -178,7 +194,7 @@ double BlobContour::moment(int p, int q)
   }
   
 	// it is calculated?
-	if (mMoments.m00 == -1)
+	if (mMoments.m00 == std::numeric_limits<cv::Point::value_type>::min())
 	{
     mMoments = cv::moments(contourPoints(), true);
 	}
@@ -187,19 +203,27 @@ double BlobContour::moment(int p, int q)
 }
 
 //! Calculate contour points from crack codes
-const PointContainer& BlobContour::contourPoints()
+const PointContainerType& BlobContour::contourPoints()
 {
 	// it is calculated?
 	if (!mContourPoints.empty())
   {
 		return mContourPoints;
   }
-  // mContourPoints is empty  
+  // mContourPoints is empty
 	if (mContour.empty())
 	{
+    if (mStartPoint.x != std::numeric_limits<cv::Point::value_type>::min() &&
+        mStartPoint.y != std::numeric_limits<cv::Point::value_type>::min())
+    {
+      mContourPoints = std::vector<cv::Point>(2, mStartPoint);
+      mBoundingBox = cv::Rect(mStartPoint, cv::Size(1, 1));
+    }
 		return mContourPoints;
 	}
-
+  
+  mContourPoints.clear();
+  
   cv::Point actual_point = mStartPoint;
   cv::Rect::value_type min_value;
   cv::Rect::value_type max_value;
@@ -223,8 +247,8 @@ const PointContainer& BlobContour::contourPoints()
   mContourPoints.reserve(mContour.size() + 1);
   mContourPoints.push_back(mStartPoint);
   
-  ChainCodeContainer::const_iterator end_iter = mContour.end();
-	for (ChainCodeContainer::const_iterator iter = mContour.begin();
+  ChainCodeContainerType::const_iterator end_iter = mContour.end();
+	for (ChainCodeContainerType::const_iterator iter = mContour.begin();
        iter != end_iter;
        ++iter)
 	{
@@ -239,8 +263,10 @@ const PointContainer& BlobContour::contourPoints()
     mContourPoints.push_back(actual_point);
 	}
 
-  bounding_box.width  -= bounding_box.x + 1;
-  bounding_box.height -= bounding_box.y + 1;
+  bounding_box.width  -= bounding_box.x;
+  bounding_box.height -= bounding_box.y;
+  bounding_box.width  += 1;
+  bounding_box.height += 1;
 
 	// assign calculated bounding box
 	mBoundingBox = bounding_box;
@@ -248,17 +274,31 @@ const PointContainer& BlobContour::contourPoints()
 	return mContourPoints;
 }
 
-const cv::Rect& BlobContour::boundingBox()
+cv::Rect BlobContour::boundingBox()
 {
+  if (isEmpty())
+  {
+    return cv::Rect();
+  }
+  
   // is it already calculated?
-  if (mBoundingBox.width != 0 &&
-      mBoundingBox.height != 0)
+  if (mBoundingBox.width != std::numeric_limits<cv::Point::value_type>::min() &&
+      mBoundingBox.height != std::numeric_limits<cv::Point::value_type>::min())
   {
 		return mBoundingBox;
   }
+
   // computes bounding box
   contourPoints();
   return mBoundingBox;
 }
 
 CVBLOBS_END_NAMESPACE
+
+namespace std {
+template<>
+void swap(cvblobs::BlobContour& lhs, cvblobs::BlobContour& rhs)
+{
+  lhs.swap(rhs);
+}
+} // namespace std

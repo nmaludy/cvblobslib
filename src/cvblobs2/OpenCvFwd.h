@@ -145,6 +145,9 @@ typedef Mat_<Vec2d> Mat2d;
 typedef Mat_<Vec3d> Mat3d;
 typedef Mat_<Vec4d> Mat4d;
 
+// Ptr
+template<typename _Tp> class Ptr;
+
 } // end namespace cv
 
 #endif // _CVBLOBSLIB_OPENCVFWD_H_

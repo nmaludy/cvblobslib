@@ -13,8 +13,8 @@ MODIFICACIONS (Modificació, Autor, Data):
 #include <stdio.h>
 #include <functional>
 #include <algorithm>
-#include <cvblobs2/counted_ptr.h>
 
+#include <cvblobs2/Blob.h>
 #include <cvblobs2/BlobOperators.h>
 
 CVBLOBS_BEGIN_NAMESPACE
@@ -275,7 +275,7 @@ BlobResult& BlobResult::operator+=(const BlobResult& source)
   if (!source.mBlobs.empty())
   {
     // use copy-swap idiom here to be safe in the face of allocation exceptions
-    BlobContainer tmp_blobs;
+    BlobContainerType tmp_blobs;
     concatVectors(tmp_blobs, source.mBlobs, mBlobs);
     
     // swap the containers so that mBlobs can be safely updated 
@@ -305,7 +305,7 @@ void BlobResult::swap(BlobResult& other)
 - DATA DE CREACIÓ: 2006/03/01
 - MODIFICACIÓ: Data. Autor. Descripció.
 */
-void BlobResult::addBlob(BlobPtrType blob)
+void BlobResult::addBlob(cv::Ptr<Blob> blob)
 {
 	mBlobs.push_back(blob);
 }
@@ -348,11 +348,11 @@ std::vector<double> BlobResult::result(BlobOperator* pOperator) const
   result.reserve(numBlobs());
 
   // evaluate pOperator for each blob
-	for (BlobContainer::const_iterator it = mBlobs.begin();
+	for (BlobContainerType::const_iterator it = mBlobs.begin();
        it != mBlobs.end();
        ++it)
   {
-    result.push_back( pOperator->GetOperatorResult(**it) );
+    result.push_back( pOperator->result(*it) );
 	}
 	return result;
 }
@@ -386,8 +386,8 @@ std::vector<double> BlobResult::result(BlobOperator* pOperator) const
 double BlobResult::number(int blobIndex, BlobOperator* pOperator) const
 {
   // use range checked at() to be safe
-  BlobPtrType p_blob = mBlobs.at(blobIndex);
-	return pOperator->GetOperatorResult(*p_blob);
+  cv::Ptr<Blob> p_blob = mBlobs.at(blobIndex);
+	return pOperator->result(p_blob);
 }
 
 /////////////////////////// FILTRAT DE BLOBS ////////////////////////////////////
@@ -541,10 +541,10 @@ void BlobResult::filter(BlobResult& dst,
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
-const Blob& BlobResult::blob(std::size_t blobIndex) const
+cv::Ptr<Blob> BlobResult::blob(std::size_t blobIndex) const
 {
   // use at for safe range checking
-	return *mBlobs.at(blobIndex);
+	return mBlobs.at(blobIndex);
 }
 
 /**
@@ -577,15 +577,13 @@ const Blob& BlobResult::blob(std::size_t blobIndex) const
 - CREATION DATE: 25-05-2005.
 - MODIFICATION: Date. Author. Description.
 */
-void BlobResult::nthBlob(BlobOperator* pCriteria,
-                         std::size_t nBlob,
-                         Blob& dst) const
+cv::Ptr<Blob> BlobResult::nthBlob(BlobOperator* pCriteria,
+                                  std::size_t nBlob) const
 {
   // range check
 	if (nBlob >= numBlobs())
 	{
-		dst = Blob();
-		return;
+		return NULL;
 	}
 
   // @todo make this more efficient
@@ -611,10 +609,10 @@ void BlobResult::nthBlob(BlobOperator* pCriteria,
 	{
 		if (*iter == nth_value)
 		{
-			dst = Blob( blob(blob_index) );
-      break;
+			return blob(blob_index);
 		}
 	}
+  return NULL;
 }
 
 /**
@@ -712,7 +710,7 @@ void BlobResult::printBlobs(char* pFileName) const
 */
 void BlobResult::removeProperty(const std::string& propertyName)
 {
-  for (BlobContainer::iterator iter = mBlobs.begin();
+  for (BlobContainerType::iterator iter = mBlobs.begin();
        iter != mBlobs.end();
        ++iter)
   {
@@ -721,3 +719,13 @@ void BlobResult::removeProperty(const std::string& propertyName)
 }
 
 CVBLOBS_END_NAMESPACE
+
+namespace std {
+template<>
+void swap(cvblobs::BlobResult& lhs, cvblobs::BlobResult& rhs)
+{
+  lhs.swap(rhs);
+}
+} // namespace std
+
+    

@@ -5,27 +5,39 @@ cmake_minimum_required(VERSION 2.6)
 
 # If the user specifies -DCMAKE_BUILD_TYPE on the command line, take their 
 # definition and dump it in the cache along with proper documentation, 
-# otherwise set CMAKE_BUILD_TYPE to Debug prior to calling project()
+# otherwise set CMAKE_BUILD_TYPE to release prior to calling project()
 if (DEFINED CMAKE_BUILD_TYPE)
-   set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Choose the type of
-build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug
-Release RelWithDebInfo MinSizeRel.")
+  set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 else ()
-   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build,
-options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release
-RelWithDebInfo MinSizeRel.")
+  # default release build
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 endif (DEFINED CMAKE_BUILD_TYPE)
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}" )
+
+# If the user specifies -DBUILD_SHARED_LIBS on the command line, take
+# their definition and put it in the cache, otherwise default to TRUE (building 
+# shared libraries).
+if (DEFINED BUILD_SHARED_LIBS)
+  set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS} CACHE BOOL "ON to build a shared library, OFF to build a static library.")
+else ()
+  # default build shared library
+  set(BUILD_SHARED_LIBS ON CACHE BOOL "ON to build a shared library, OFF to build a static library.")
+endif (DEFINED BUILD_SHARED_LIBS)
+message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}" )
 
 # verbose makefile
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "Verbose" FORCE)
 # Compiler flags
 #  -Wall     : warn all
-#  -Werror   : turn all warnings into errors
+#  -Wextra   : turn on extra warnings
 #  -pedantic : strict ISO C++ standards
 #  -ansi     : strict ansi standards
 #  -fno-strict-aliasing : no strict aliasing of pointers
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -pedantic -ansi -fno-strict-aliasing")
+#
+# Append to CMAKE_CXX_FLAGS because it is initialized with the environment
+# variable CXXFLAGS. This way we use the environment variable flags plus
+# our own.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -ansi -fno-strict-aliasing")
 
 ###########
 # Project #
@@ -57,30 +69,34 @@ file(GLOB HEADERS
      ${CMAKE_CURRENT_LIST_DIR}/src/cvblobs/*.h
      ${CMAKE_CURRENT_LIST_DIR}/src/cvblobs2/*.h)
 
-# define the GeographicJni library and specify whether it is shared or not.
-add_library(${CVBLOBS_LIBRARY_NAME} SHARED STATIC ${SOURCES} ${HEADERS})
+# define the CvBlobs library and specify whether it is shared or not.
+add_library(${CVBLOBS_LIBRARY_NAME} ${SOURCES} ${HEADERS})
+
 # set the library version so that the library will be named libX.so.MAJOR.MINOR
 # this will also create nice symlinks
 set_target_properties(${CVBLOBS_LIBRARY_NAME} PROPERTIES
   VERSION   ${CVBLOBS_VERSION}
   SOVERSION ${CVBLOBS_MAJOR_VERSION})
 
-# full name with .so postfix and versions for shared library  (ex: libcvblobs.so.0.1.0)
-set(CVBLOBS_SHARED_LIBRARY_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX})
-# full name with .a postfix for static library (ex: libcvblobs.a)
-set(CVBLOBS_STATIC_LIBRARY_NAME ${CMAKE_STATIC_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX})
-
 # create a sylink called libblob.so that links to libcvblobs.so
-set(LIBBLOB_LINK_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}blob${CMAKE_SHARED_LIBRARY_SUFFIX})
-add_custom_command(TARGET ${CVBLOBS_LIBRARY_NAME} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CVBLOBS_SHARED_LIBRARY_NAME} ${LIBBLOB_LINK_NAME}
-)
+if (BUILD_SHARED_LIBS)
+  # full name with .so postfix and versions for shared library  (ex: libcvblobs.so.0.1.0)
+  set(CVBLOBS_SHARED_LIBRARY_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX})
+  
+  set(LIBBLOB_LINK_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}blob${CMAKE_SHARED_LIBRARY_SUFFIX})
+  add_custom_command(TARGET ${CVBLOBS_LIBRARY_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CVBLOBS_SHARED_LIBRARY_NAME} ${LIBBLOB_LINK_NAME}
+    )
+else()
+  # full name with .a postfix for static library (ex: libcvblobs.a)
+  set(CVBLOBS_STATIC_LIBRARY_NAME ${CMAKE_STATIC_LIBRARY_PREFIX}${CVBLOBS_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX})
 
-# create a sylink called libblob.a that links to libcvblobs.a
-set (LIBBLOB_LINK_NAME ${CMAKE_STATIC_LIBRARY_PREFIX}blob${CMAKE_STATIC_LIBRARY_SUFFIX})
-add_custom_command(TARGET ${CVBLOBS_LIBRARY_NAME} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CVBLOBS_STATIC_LIBRARY_NAME} ${LIBBLOB_LINK_NAME}
-)
+  # create a sylink called libblob.a that links to libcvblobs.a
+  set (LIBBLOB_LINK_NAME ${CMAKE_STATIC_LIBRARY_PREFIX}blob${CMAKE_STATIC_LIBRARY_SUFFIX})
+  add_custom_command(TARGET ${CVBLOBS_LIBRARY_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CVBLOBS_STATIC_LIBRARY_NAME} ${LIBBLOB_LINK_NAME}
+    )
+endif(BUILD_SHARED_LIBS)
 
  
 ##################################

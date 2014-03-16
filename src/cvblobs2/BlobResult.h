@@ -25,15 +25,15 @@ CVBLOBS_BEGIN_NAMESPACE
 **************************************************************************/
 
 /** 
-	Classe que conté un conjunt de blobs i permet extreure'n propietats 
-	o filtrar-los segons determinats criteris.
-	Class to calculate the blobs of an image and calculate some properties 
-	on them. Also, the class provides functions to filter the blobs using
-	some criteria.
+    Classe que conté un conjunt de blobs i permet extreure'n propietats 
+    o filtrar-los segons determinats criteris.
+    Class to calculate the blobs of an image and calculate some properties 
+    on them. Also, the class provides functions to filter the blobs using
+    some criteria.
 */
 class BlobResult  
 {
-public:
+ public:
 
 	//! constructor estandard, crea un conjunt buit de blobs
 	//! Standard constructor, it creates an empty set of blobs
@@ -62,7 +62,7 @@ public:
   
   //! Afegeix un blob al conjunt
 	//! Adds a blob to the set of blobs
-	void addBlob(BlobPtrType blob);
+	void addBlob(cv::Ptr<Blob> blob);
 
 	//! Calcula un valor sobre tots els blobs de la classe retornant un std::vector<double>
 	//! Computes some property on all the blobs of the class
@@ -75,21 +75,20 @@ public:
 	//! Retorna aquells blobs que compleixen les condicions del filtre en el destination 
 	//! Filters the blobs of the class using some property
 	void filter(BlobResult& dst,
-                FilterAction filterAction,
-                BlobOperator* pOperator,
-                FilterCondition condition,
-                double lowLimit,
-                double highLimit = 0);
+              FilterAction filterAction,
+              BlobOperator* pOperator,
+              FilterCondition condition,
+              double lowLimit,
+              double highLimit = 0);
 			
 	//! Retorna l'enèssim blob segons un determinat criteri
 	//! Sorts the blobs of the class acording to some criteria and returns the n-th blob
-	void nthBlob(BlobOperator* pCriteria,
-               std::size_t nBlob,
-               Blob& dst) const;
+  cv::Ptr<Blob> nthBlob(BlobOperator* pCriteria,
+                        std::size_t nBlob) const;
 	
 	//! Retorna el blob enèssim
 	//! Gets the n-th blob of the class ( without sorting )
-	const Blob& blob(std::size_t i) const;
+  cv::Ptr<Blob> blob(std::size_t i) const;
 	
 	//! Elimina tots els blobs de l'objecte
 	//! Clears all the blobs of the class
@@ -99,7 +98,7 @@ public:
 	//! Prints some features of all the blobs in a file
 	void printBlobs(char* pFileName) const;
 
-//Metodes GET/SET
+  //Metodes GET/SET
 
 	//! Retorna el total de blobs
 	//! Gets the total number of blobs
@@ -108,11 +107,11 @@ public:
 	//! Clears a calculated property from blobs
 	void removeProperty(const std::string& propertyName);
 	
-protected:
+ protected:
 
 	//! Vector amb els blobs
 	//! Vector with all the blobs
-	BlobContainer mBlobs;
+	BlobContainerType mBlobs;
 };
 
 inline std::size_t BlobResult::numBlobs() const 
@@ -124,10 +123,7 @@ CVBLOBS_END_NAMESPACE
 
 namespace std {
 template<>
-void swap(cvblobs::BlobResult& lhs, cvblobs::BlobResult& rhs)
-{
-  lhs.swap(rhs);
-}
+void swap(cvblobs::BlobResult& lhs, cvblobs::BlobResult& rhs);
 } // namespace std
 
 #endif // _CVBLOBS2_BLOBRESULT_H_

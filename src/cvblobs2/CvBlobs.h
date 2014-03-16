@@ -14,6 +14,5 @@
 #include <cvblobs2/BlobResult.h>
 #include <cvblobs2/ChainCode.h>
 #include <cvblobs2/ComponentLabeling.h>
-#include <cvblobs2/counted_ptr.h>
 
 #endif // _CVBLOBS2_CVBLOBS_H_

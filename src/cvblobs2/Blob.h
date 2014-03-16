@@ -8,8 +8,16 @@
 #ifndef _CVBLOBS2_BLOB_H_
 #define _CVBLOBS2_BLOB_H_
 
+// std
 #include <map>
-#include <cvblobs2/BlobContour.h>
+#include <string>
+
+// opencv
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
+// cvblobs
+#include <cvblobs2/CvBlobsFwd.h>
 
 CVBLOBS_BEGIN_NAMESPACE
 
@@ -19,15 +27,30 @@ class Blob
 	//! Type of blob properties: a map with variant types
 	typedef std::map<std::string, double> PropertiesType;
 
+  /** 
+   * @brief Creates an empty blob.
+   */
 	Blob();
+
+  /** 
+   * @brief Creates a new blob with an identifier of \p id starting its
+   * external contour at \p startPoint with an original image size of
+   * \p originalImageSize
+   * @param id 
+   * @param startPoint 
+   * @param originalImageSize 
+   */
 	Blob(LabelType id,
        const cv::Point& startPoint,
        const cv::Size& originalImageSize);
+
+  /** 
+   * @brief Destroys a blob and all of its contours
+   */
 	~Blob();
 
 	//! Copy constructor
 	Blob(const Blob& source);
-	Blob(Blob* pSource);
 
 	//! Assigment operator
 	Blob& operator=(const Blob& source);
@@ -36,10 +59,27 @@ class Blob
   void swap(Blob& other);
 	
 	//! Adds a new internal contour to the blob
-	void addInternalContour(const BlobContour& newContour);
+	void addInternalContour(cv::Ptr<BlobContour> pInternalContour);
 	
-	//! Retrieves contour in Freeman's chain code
-	inline BlobContour* externalContour();
+	//! Retrieves external contour in Freeman's chain code
+	inline cv::Ptr<BlobContour> externalContour();
+
+  /** 
+   * @brief Returns the number of internal contours of the blob
+   */
+	inline std::size_t numInternalContours() const;
+
+  /** 
+   * @brief Returns the internal BlobContour at index \p i 
+   * @param i the index of the internal contour to retrieve.
+   * @return A pointer to the internal contour at index \p i.
+   * If \p i is >= numInternalContours() then NULL is returned.
+   */
+  inline cv::Ptr<BlobContour> internalContour(std::size_t i) const;
+  
+  
+	//! Retrieves an internal contour in Freeman's chain code at index i
+	// inline BlobContour* internalContour(std::size_t);
   
 	//! Get label ID
 	inline LabelType id() const;
@@ -58,6 +98,12 @@ class Blob
 	double perimeter();
   
 	//! Compute blob's moment (p,q up to MAX_CALCULATED_MOMENTS)
+//! @see https://en.wikipedia.org/wiki/Image_moment
+//! M00 = area (number of pixels in image)
+//! M10 = sum over X
+//! M01 = sum over Y
+//! centroid x = M10 / M00
+//! centroid y = M01 / M00
 	double moment(int p, int q);
 
 	//! Compute extern perimeter 
@@ -79,7 +125,7 @@ class Blob
 
 	//! Retorna el poligon convex del blob
 	//! Calculates the convex hull of the blob
-	void convexHull(PointContainer& hull);
+	void convexHull(PointContainerType& hull);
 
 	//! Pinta l'interior d'un blob d'un color determinat
 	//! Paints the blob in an image
@@ -89,7 +135,7 @@ class Blob
 	void joinBlob(const Blob& blob);
 
 	//! Get bounding box
-  const cv::Rect& boundingBox();
+  cv::Rect boundingBox();
   
 	//! Get bounding ellipse
   cv::RotatedRect ellipse();
@@ -111,6 +157,12 @@ class Blob
 
 	//! Remove calculated property from results
 	inline void resetProperty(const std::string& propertyName);
+    
+	//! Calculates mean and std deviation of blob in input image
+	void meanAndStdDev(cv::Mat& image, double& mean, double& stdDev);
+	
+	//! Deallocates all contours
+	void clear();
   
  private:
 
@@ -135,21 +187,16 @@ class Blob
       return false;
     }
   };
-
-	//! Calculates mean and std deviation of blob in input image
-	void meanAndStdDev(cv::Mat& image, double& mean, double& stdDev);
-	
-	//! Deallocates all contours
-	void clearContours();
   
 	//////////////////////////////////////////////////////////////////////////
 	// Blob contours
 	//////////////////////////////////////////////////////////////////////////
 
 	//! External contour of the blob (crack codes)
-	BlobContour mExternalContour;
+  cv::Ptr<BlobContour> mpExternalContour;
+
 	//! Internal contours (crack codes)
-	ContourContainer mInternalContours;
+	ContourContainerType mInternalContours;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Blob features
@@ -160,15 +207,14 @@ class Blob
 
 	//! Label number
 	LabelType mId;
-	//! Bounding box
-  cv::Rect mBoundingBox;
+  
 	//! Sizes from image where blob is extracted
   cv::Size mOriginalImageSize;
 };
 
-inline BlobContour* Blob::externalContour()
+inline cv::Ptr<BlobContour> Blob::externalContour()
 {
-  return &mExternalContour;
+  return mpExternalContour;
 }
 
 inline LabelType Blob::id() const
@@ -210,10 +256,7 @@ CVBLOBS_END_NAMESPACE
 
 namespace std {
 template<>
-void swap(cvblobs::Blob& lhs, cvblobs::Blob& rhs)
-{
-  lhs.swap(rhs);
-}
+void swap(cvblobs::Blob& lhs, cvblobs::Blob& rhs);
 } // namespace std
 
 #endif // _CVBLOBS2_BLOB_H_
